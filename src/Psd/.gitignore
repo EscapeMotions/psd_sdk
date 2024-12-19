@@ -3,3 +3,4 @@ build/
 static_build/
 static_build_msvc/
 cmake-build-debug/
+include/

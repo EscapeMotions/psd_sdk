@@ -46,6 +46,8 @@ struct Layer
     bool isCompositeLocked;             ///< If the layer has a composite locked (false by default).
     bool isTransparencyLocked;          ///< If the layer has a transparency locked (false by default).
     bool isPositionLocked;              ///< If the layer has a position locked (false by default).
+
+	bool isGradientFill;				///< If the layer type is GradientFill
 };
 
 PSD_NAMESPACE_END

@@ -27,6 +27,8 @@ struct ExportLayer
     bool isTransparencyLocked;
     bool isCompositeLocked;
     bool isPositionLocked;
+
+	uint32_t type;
 };
 
 PSD_NAMESPACE_END

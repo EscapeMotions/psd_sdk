@@ -532,6 +532,7 @@ namespace
                 layer->isTransparencyLocked = false;
                 layer->isCompositeLocked = false;
                 layer->isPositionLocked = false;
+				layer->isGradientFill = false;
 
 				layer->top = fileUtil::ReadFromFileBE<int32_t>(reader);
 				layer->left = fileUtil::ReadFromFileBE<int32_t>(reader);
@@ -581,8 +582,8 @@ namespace
 				const uint32_t extraDataLength = fileUtil::ReadFromFileBE<uint32_t>(reader);
 				const uint32_t layerMaskDataLength = fileUtil::ReadFromFileBE<uint32_t>(reader);
 
-                std::cout << "extraDataLength" << extraDataLength << std::endl;
-                std::cout << "layerMaskDataLength" << layerMaskDataLength << std::endl;
+                // std::cout << "extraDataLength" << extraDataLength << std::endl;
+                // std::cout << "layerMaskDataLength" << layerMaskDataLength << std::endl;
 
 				// the layer mask data section is weird. it may contain extra data for masks, such as density and feather parameters.
 				// there are 3 main possibilities:
@@ -677,14 +678,14 @@ namespace
 
 				// skip blending ranges data, we are not interested in that for now
 				const uint32_t layerBlendingRangesDataLength = fileUtil::ReadFromFileBE<uint32_t>(reader);
-                std::cout << "layerBlendingRangesDataLength" << layerBlendingRangesDataLength << std::endl;
+                // std::cout << "layerBlendingRangesDataLength" << layerBlendingRangesDataLength << std::endl;
                 reader.Skip(layerBlendingRangesDataLength);
 
 				// the layer name is stored as pascal string, padded to a multiple of 4
 				char layerName[512] = {};
 				const uint8_t nameLength = fileUtil::ReadFromFileBE<uint8_t>(reader);
 				const uint32_t paddedNameLength = bitUtil::RoundUpToMultiple(nameLength + 1u, 4u);
-                std::cout << "paddedNameLength" << paddedNameLength << std::endl;
+                // std::cout << "paddedNameLength" << paddedNameLength << std::endl;
 				reader.Read(layerName, paddedNameLength - 1u);
 
 				layer->name.Assign(layerName);
@@ -694,7 +695,7 @@ namespace
 				// the PSD format sometimes includes the 4-byte length in its section size, and sometimes not.
 				const uint32_t additionalLayerInfoSize = extraDataLength - layerMaskDataLength - layerBlendingRangesDataLength - paddedNameLength - 8u;
 				int64_t toRead = additionalLayerInfoSize;
-                std::cout << "To read: " << toRead << std::endl;
+                // std::cout << "To read: " << toRead << std::endl;
 				while (toRead > 0)
 				{
 					const uint32_t signature = fileUtil::ReadFromFileBE<uint32_t>(reader);
@@ -763,6 +764,11 @@ namespace
                         layer->isCompositeLocked = compositeLocked;
                         layer->isPositionLocked = positionLocked;
                     }
+					else if (key == util::Key<'G', 'd', 'F', 'l'>::VALUE)
+					{
+						layer->isGradientFill = true;
+						reader.Skip(length);
+					}
 					else
 					{
 						reader.Skip(length);

@@ -20,9 +20,10 @@
 
 #include <iostream>
 
-PSD_NAMESPACE_BEGIN
+#include "PsdLayerType.h"
 
-namespace
+PSD_NAMESPACE_BEGIN
+	namespace
 {
 	static const char XMP_HEADER[]= "<x:xmpmeta xmlns:x = \"adobe:ns:meta/\">\n"
 		"<rdf:RDF xmlns:rdf = \"http://www.w3.org/1999/02/22-rdf-syntax-ns#\">\n"
@@ -166,10 +167,12 @@ namespace
 		const uint8_t nameLength = static_cast<uint8_t>(strlen(layer->name));
         // 4 signature, 4 key, 4 length, 4 locks themselves
         const uint8_t locksLength = 16u;
-        const uint32_t paddedNameLength = bitUtil::RoundUpToMultiple(nameLength + locksLength + 1u, 4u);
+		// 4 signature, 4 key, 4 length, 4 type itself
+		const uint8_t typeLength = 16;
+        const uint32_t paddedNameLength = bitUtil::RoundUpToMultiple(nameLength + 1u, 4u);
 
 		// includes the lengths of the layer mask data and layer blending ranges data
-		return (4u + 4u + paddedNameLength);
+		return (4u + 4u + paddedNameLength + locksLength + typeLength);
 	}
 
 
@@ -192,6 +195,12 @@ namespace
 		//     - layer mask data length (4)
 		//     - layer blending ranges length (4)
 		//     - padded name (variable)
+		//	   - layer locks signature and key (8)
+		//     - layer locks length (4)
+		//     - layer locks (4)
+		//     - layer type signature and key (8)
+		//	   - layer type length (4)
+		//     - layer type (4)
 		// - all channel data (variable)
 		//   - compression (2)
 		//   - channel data (variable)
@@ -494,6 +503,8 @@ unsigned int AddLayer(ExportDocument* document, Allocator* allocator, const char
     layer->isCompositeLocked = false;
     layer->isPositionLocked = false;
 
+	layer->type = 0u;
+
 	return index;
 }
 
@@ -760,6 +771,16 @@ void UpdateLayerLocks(ExportDocument* document, Allocator* allocator, unsigned i
     layer->isTransparencyLocked = isTransparencyLocked;
     layer->isCompositeLocked = isCompositeLocked;
     layer->isPositionLocked = isPositionLocked;
+}
+
+
+// ---------------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
+void UpdateLayerType(ExportDocument* document, Allocator* allocator, unsigned int layerIndex, uint32_t layerType)
+{
+	ExportLayer* layer = document->layers + layerIndex;
+
+	layer->type = layerType;
 }
 
 
@@ -1254,8 +1275,7 @@ void WriteDocument(ExportDocument* document, Allocator* allocator, File* file)
 		}
 	}
 
-    std::cout << "LayerInfoSectionLengthStart " << writer.GetPosition() << std::endl;
-    // TODO Second lenth addition
+    // std::cout << "LayerInfoSectionLengthStart " << writer.GetPosition() << std::endl;
     fileUtil::WriteToFileBE(writer, layerInfoSectionLength);
 
 	// layer count
@@ -1331,6 +1351,16 @@ void WriteDocument(ExportDocument* document, Allocator* allocator, File* file)
         lockValue |= layer->isCompositeLocked ? (0x01 << 1) : 0;
         lockValue |= layer->isPositionLocked ? (0x01 << 2) : 0;
         fileUtil::WriteToFileBE(writer, lockValue);
+
+		// section divider setting
+		fileUtil::WriteToFileBE(writer, util::Key<'8', 'B', 'I', 'M'>::VALUE);
+		fileUtil::WriteToFileBE(writer, util::Key<'l', 's', 'c', 't'>::VALUE);
+
+		const uint32_t typeLength = 4u;
+		fileUtil::WriteToFileBE(writer, typeLength);
+		fileUtil::WriteToFileBE(writer, layer->type);
+
+
 	}
 
 	// per-layer data

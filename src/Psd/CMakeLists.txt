@@ -193,3 +193,14 @@ source_group("Source Files/Types" FILES ${psd_source_types})
 source_group("Source Files/Util" FILES ${psd_source_util})
 source_group("Source Files/Zip" FILES ${psd_source_zip})
 source_group("Source Files" FILES ${psd_source_})
+
+file(REMOVE ./include)
+file(MAKE_DIRECTORY ./include)
+
+file(GLOB HEADER_FILES "*.h")
+
+foreach (header ${HEADER_FILES})
+    file(COPY ${header} DESTINATION ${CMAKE_SOURCE_DIR}/include)
+endforeach ()
+
+
