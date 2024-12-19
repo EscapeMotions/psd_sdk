@@ -18,6 +18,9 @@
 #include "PsdLog.h"
 
 
+#include <iostream>
+#include <string>
+
 PSD_NAMESPACE_BEGIN
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -37,6 +40,12 @@ ImageResourcesSection* ParseImageResourcesSection(const Document* document, File
 	imageResources->containsRealMergedData = true;
 	imageResources->xmpMetadata = nullptr;
 	imageResources->thumbnail = nullptr;
+	imageResources->horizontalResolution = 0.0f;
+	imageResources->horizontalUnit = 0u;
+	imageResources->widthUnit = 0u;
+	imageResources->verticalResolution = 0.0f;
+	imageResources->verticalUnit = 0u;
+	imageResources->heightUnit = 0u;
 
 	SyncFileReader reader(file);
 	reader.SetPosition(document->imageResourcesSection.offset);
@@ -76,9 +85,26 @@ ImageResourcesSection* ParseImageResourcesSection(const Document* document, File
 			case imageResource::PRINT_FLAGS:
 			case imageResource::PRINT_FLAGS_INFO:
 			case imageResource::PRINT_INFO:
-			case imageResource::RESOLUTION_INFO:
 				// we are currently not interested in this resource
 				break;
+			case imageResource::RESOLUTION_INFO:
+			{
+				// 1. horizontal resolution (32-bit fixed point number (16.16))
+				// 2. horizontal unit (uint16)
+				// 3. width unit (uint16)
+				// 1. vertical resolution	(32-bit fixed point number (16.16))
+				// 2. vertical unit (uint16)
+				// 3. height unit (uint16)
+				// divided by 2^16
+				imageResources->horizontalResolution = static_cast<float32_t>(fileUtil::ReadFromFileBE<uint32_t>(reader)) / 65536.0f;
+				imageResources->horizontalUnit = fileUtil::ReadFromFileBE<uint16_t>(reader);
+				imageResources->widthUnit = fileUtil::ReadFromFileBE<uint16_t>(reader);
+				// divided by 2^16
+				imageResources->verticalResolution = static_cast<float32_t>(fileUtil::ReadFromFileBE<uint32_t>(reader)) / 65536.0f;
+				imageResources->verticalUnit = fileUtil::ReadFromFileBE<uint16_t>(reader);
+				imageResources->heightUnit = fileUtil::ReadFromFileBE<uint16_t>(reader);
+			}
+			break;
 
 			case imageResource::DISPLAY_INFO:
 			{

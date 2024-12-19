@@ -2,9 +2,15 @@
 # Copyright 2023, heavenstone <heavenstone1308@gmail.com>
 # See LICENSE.txt for licensing details (2-clause BSD License: https://opensource.org/licenses/BSD-2-Clause)
 
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 3.16)
 
 project(Psd)
+
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+MESSAGE("-- CMAKE_HOST_SYSTEM_NAME ${CMAKE_HOST_SYSTEM_NAME}")
+MESSAGE("-- CMAKE_HOST_SYSTEM_VERSION ${CMAKE_HOST_SYSTEM_VERSION}")
 
 set(psd_source_exporter
   PsdExport.h
@@ -38,16 +44,19 @@ if (WIN32)
     PsdNativeFile.h
     PsdNativeFile.cpp
   )
+  message("-- PROJECT_PLATFORM=WINDOWS")
 elseif (APPLE)
   list(APPEND psd_source_interfaces
     PsdNativeFile_Mac.h
     PsdNativeFile_Mac.mm
   )
+  message("-- PROJECT_PLATFORM=APPLE")
 else()
   list(APPEND psd_source_interfaces
     PsdNativeFile_Linux.h
     PsdNativeFile_Linux.cpp
   )
+  message("-- PROJECT_PLATFORM=LINUX")
 endif()
 
 
@@ -123,6 +132,10 @@ set(psd_source_zip
   Psdminiz.c
 )
 
+set(psd_source_support
+
+)
+
 set(psd_source_
   Psd.h
   PsdDocumentation.h
@@ -145,9 +158,30 @@ set(psd_source
   ${psd_source_util}
   ${psd_source_zip}
   ${psd_source_}
+  ${psd_source_support}
 )
 
-add_library(Psd ${psd_source})
+set(STATIC_BUILD FALSE)
+
+if (${STATIC_BUILD})
+    add_library(Psd STATIC ${psd_source})
+    set_target_properties(Psd PROPERTIES PUBLIC_HEADER "include/Psd.h")
+    target_include_directories(Psd PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+    include(GNUInstallDirs)
+    install(TARGETS Psd 
+            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+else()
+    # SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
+    add_library(Psd SHARED ${psd_source})
+    set_target_properties(Psd PROPERTIES PUBLIC_HEADER "include/Psd.h")
+    target_include_directories(Psd PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+    include(GNUInstallDirs)
+    install(TARGETS Psd 
+            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+endif()
 
 source_group("Source Files/Exporter" FILES ${psd_source_exporter})
 source_group("Source Files/ImageUtil" FILES ${psd_source_image_util})

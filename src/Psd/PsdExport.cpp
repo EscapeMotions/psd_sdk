@@ -18,6 +18,8 @@
 #include <string.h>
 
 
+#include <iostream>
+
 PSD_NAMESPACE_BEGIN
 
 namespace
@@ -162,7 +164,9 @@ namespace
 	static uint32_t GetExtraDataLength(ExportLayer* layer)
 	{
 		const uint8_t nameLength = static_cast<uint8_t>(strlen(layer->name));
-		const uint32_t paddedNameLength = bitUtil::RoundUpToMultiple(nameLength + 1u, 4u);
+        // 4 signature, 4 key, 4 length, 4 locks themselves
+        const uint8_t locksLength = 16u;
+        const uint32_t paddedNameLength = bitUtil::RoundUpToMultiple(nameLength + locksLength + 1u, 4u);
 
 		// includes the lengths of the layer mask data and layer blending ranges data
 		return (4u + 4u + paddedNameLength);
@@ -486,6 +490,10 @@ unsigned int AddLayer(ExportDocument* document, Allocator* allocator, const char
 	ExportLayer* layer = document->layers + index;
 	layer->name = CreateString(allocator, name);
 
+    layer->isTransparencyLocked = false;
+    layer->isCompositeLocked = false;
+    layer->isPositionLocked = false;
+
 	return index;
 }
 
@@ -741,6 +749,17 @@ void UpdateLayerImpl(ExportDocument* document, Allocator* allocator, unsigned in
 		// delta-encode, then compress with ZIP
 		CreateDataZipPrediction(allocator, layer, channelIndex, planarData, width, height);
 	}
+}
+
+
+// ---------------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
+void UpdateLayerLocks(ExportDocument* document, Allocator* allocator, unsigned int layerIndex, bool isTransparencyLocked, bool isCompositeLocked, bool isPositionLocked){
+    ExportLayer* layer = document->layers + layerIndex;
+
+    layer->isTransparencyLocked = isTransparencyLocked;
+    layer->isCompositeLocked = isCompositeLocked;
+    layer->isPositionLocked = isPositionLocked;
 }
 
 
@@ -1008,7 +1027,7 @@ void WriteDocument(ExportDocument* document, Allocator* allocator, File* file)
 			sectionLength += hasAlphaChannels ? bitUtil::RoundUpToMultiple(GetImageResourceSize() + unicodeChannelNamesSize, 2u) : 0u;
 
 			// image resource section starts with length of the whole section
-			fileUtil::WriteToFileBE(writer, sectionLength);
+            fileUtil::WriteToFileBE(writer, sectionLength);
 
 			if (hasMetaData)
 			{
@@ -1197,12 +1216,14 @@ void WriteDocument(ExportDocument* document, Allocator* allocator, File* file)
 	const unsigned int paddingNeeded = bitUtil::RoundUpToMultiple(layerInfoSectionLength, 4u) - layerInfoSectionLength;
 	layerInfoSectionLength += paddingNeeded;
 
-	const bool is8BitData = (document->bitsPerChannel == 8u);
-	if (is8BitData)
+    const bool is8BitData = (document->bitsPerChannel == 8u);
+    if (is8BitData)
 	{
+        std::cout << "8 - bit data" << std::endl;
 		// 8-bit data
 		// layer mask section length also includes global layer mask info marker. layer info follows directly after that
-		const uint32_t layerMaskSectionLength = layerInfoSectionLength + 4u;
+        // TODO First length addition
+        const uint32_t layerMaskSectionLength = layerInfoSectionLength + 4u;
 		fileUtil::WriteToFileBE(writer, layerMaskSectionLength);
 	}
 	else
@@ -1226,14 +1247,16 @@ void WriteDocument(ExportDocument* document, Allocator* allocator, File* file)
 			const uint32_t key = util::Key<'L', 'r', '1', '6'>::VALUE;
 			fileUtil::WriteToFileBE(writer, key);
 		}
-		else if (document->bitsPerChannel == 32u)
+        else if (document->bitsPerChannel == 32u)
 		{
 			const uint32_t key = util::Key<'L', 'r', '3', '2'>::VALUE;
 			fileUtil::WriteToFileBE(writer, key);
 		}
 	}
 
-	fileUtil::WriteToFileBE(writer, layerInfoSectionLength);
+    std::cout << "LayerInfoSectionLengthStart " << writer.GetPosition() << std::endl;
+    // TODO Second lenth addition
+    fileUtil::WriteToFileBE(writer, layerInfoSectionLength);
 
 	// layer count
 	fileUtil::WriteToFileBE(writer, document->layerCount);
@@ -1279,20 +1302,35 @@ void WriteDocument(ExportDocument* document, Allocator* allocator, File* file)
 		fileUtil::WriteToFileBE(writer, filler);
 
 		// extra data, including layer name
-		const uint32_t extraDataLength = GetExtraDataLength(layer);
-		fileUtil::WriteToFileBE(writer, extraDataLength);
+        const uint32_t extraDataLength = GetExtraDataLength(layer);
+        fileUtil::WriteToFileBE(writer, extraDataLength);
 
-		const uint32_t layerMaskDataLength = 0u;
+        const uint32_t layerMaskDataLength = 0u;
+        std::cout << "LayerMaskDataStart: " << writer.GetPosition() << std::endl;
 		fileUtil::WriteToFileBE(writer, layerMaskDataLength);
+        std::cout << "LayerMaskDataLength: " << layerMaskDataLength << std::endl;
 
-		const uint32_t layerBlendingRangesDataLength = 0u;
+        const uint32_t layerBlendingRangesDataLength = 0u;
 		fileUtil::WriteToFileBE(writer, layerBlendingRangesDataLength);
 
 		// the layer name is stored as pascal string, padded to a multiple of 4
 		const uint8_t nameLength = static_cast<uint8_t>(strlen(layer->name));
-		const uint32_t paddedNameLength = bitUtil::RoundUpToMultiple(nameLength + 1u, 4u);
+        const uint32_t paddedNameLength = bitUtil::RoundUpToMultiple(nameLength + 1u, 4u);
 		fileUtil::WriteToFileBE(writer, nameLength);
-		writer.Write(layer->name, paddedNameLength - 1u);
+        writer.Write(layer->name, paddedNameLength - 1u);
+
+        // lock information
+        fileUtil::WriteToFileBE(writer, util::Key<'8', 'B', 'I', 'M'>::VALUE);
+        fileUtil::WriteToFileBE(writer, util::Key<'l', 's', 'p', 'f'>::VALUE);
+
+        const uint32_t locksLength = 4u;
+        fileUtil::WriteToFileBE(writer, locksLength);
+
+        uint32_t lockValue = 0;
+        lockValue |= layer->isTransparencyLocked ? (0x01 << 0) : 0;
+        lockValue |= layer->isCompositeLocked ? (0x01 << 1) : 0;
+        lockValue |= layer->isPositionLocked ? (0x01 << 2) : 0;
+        fileUtil::WriteToFileBE(writer, lockValue);
 	}
 
 	// per-layer data
@@ -1314,7 +1352,7 @@ void WriteDocument(ExportDocument* document, Allocator* allocator, File* file)
 	// add padding to align layer info section to multiple of 4
 	if (paddingNeeded != 0u)
 	{
-		writer.Write(zeroes, paddingNeeded);
+        writer.Write(zeroes, paddingNeeded);
 	}
 
 	// global layer mask info

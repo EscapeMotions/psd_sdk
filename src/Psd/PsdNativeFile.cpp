@@ -10,6 +10,7 @@
 #include "PsdLog.h"
 #include "Psdinttypes.h"
 
+#include <Windows.h>
 
 PSD_NAMESPACE_BEGIN
 

@@ -50,6 +50,7 @@ namespace blendMode
 
 	/// Converts any of the \ref blendMode::Enum values into a string literal.
 	const char* ToString(Enum value);
+	const char* ToShortString(Enum value);
 }
 
 PSD_NAMESPACE_END

@@ -98,6 +98,49 @@ namespace blendMode
 
 		#undef IMPLEMENT_CASE
 	}
+	// ---------------------------------------------------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------------------------------------------------
+	const char* ToShortString(Enum value)
+	{
+#define IMPLEMENT_CASE(value, retValue)		case value:	return retValue
+
+		switch (value)
+		{
+			IMPLEMENT_CASE(PASS_THROUGH, "pass");
+			IMPLEMENT_CASE(NORMAL, "norm");
+			IMPLEMENT_CASE(DISSOLVE, "diss");
+			IMPLEMENT_CASE(DARKEN, "dark");
+			IMPLEMENT_CASE(MULTIPLY, "mul ");
+			IMPLEMENT_CASE(COLOR_BURN, "idiv");
+			IMPLEMENT_CASE(LINEAR_BURN, "lbrn");
+			IMPLEMENT_CASE(DARKER_COLOR, "dkCl");
+			IMPLEMENT_CASE(LIGHTEN, "lite");
+			IMPLEMENT_CASE(SCREEN, "scrn");
+			IMPLEMENT_CASE(COLOR_DODGE, "div ");
+			IMPLEMENT_CASE(LINEAR_DODGE, "lddg");
+			IMPLEMENT_CASE(LIGHTER_COLOR, "lgCl");
+			IMPLEMENT_CASE(OVERLAY, "over");
+			IMPLEMENT_CASE(SOFT_LIGHT, "sLit");
+			IMPLEMENT_CASE(HARD_LIGHT, "hLit");
+			IMPLEMENT_CASE(VIVID_LIGHT, "vLit");
+			IMPLEMENT_CASE(LINEAR_LIGHT, "lLit");
+			IMPLEMENT_CASE(PIN_LIGHT, "pLit");
+			IMPLEMENT_CASE(HARD_MIX, "hMix");
+			IMPLEMENT_CASE(DIFFERENCE, "diff");
+			IMPLEMENT_CASE(EXCLUSION, "smud");
+			IMPLEMENT_CASE(SUBTRACT, "fsub");
+			IMPLEMENT_CASE(DIVIDE, "fdiv");
+			IMPLEMENT_CASE(HUE, "hue ");
+			IMPLEMENT_CASE(SATURATION, "sat ");
+			IMPLEMENT_CASE(COLOR, "colr");
+			IMPLEMENT_CASE(LUMINOSITY, "lum ");
+			IMPLEMENT_CASE(UNKNOWN, "unkn");
+		};
+
+		return "Unhandled blend mode";
+
+#undef IMPLEMENT_CASE
+	}
 }
 
 PSD_NAMESPACE_END

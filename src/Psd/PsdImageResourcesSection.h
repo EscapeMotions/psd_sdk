@@ -30,6 +30,14 @@ struct ImageResourcesSection
 	char* xmpMetadata;						///< Raw XMP metadata.
 
 	Thumbnail* thumbnail;					///< JPEG thumbnail.
+
+	float32_t horizontalResolution;			///< Horizontal resolution.
+	uint16_t horizontalUnit;				///< Horizontal unit.
+	uint16_t widthUnit;						///< Width unit.
+
+	float32_t verticalResolution;			///< Vertical resolution.
+	uint16_t verticalUnit;					///< Vertical unit.
+	uint16_t heightUnit;					///< Height unit.
 };
 
 PSD_NAMESPACE_END

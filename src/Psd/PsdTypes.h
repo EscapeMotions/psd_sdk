@@ -5,7 +5,7 @@
 
 
 #include "Psdstdint.h"
-
+#include <assert.h>
 
 /// \ingroup Platform
 /// \brief Defines a standard 32-bit floating-point type.
@@ -31,3 +31,5 @@ static_assert(sizeof(int64_t) == 8, "sizeof(int64_t) is not 8 bytes");
 
 static_assert(sizeof(float32_t) == 4, "sizeof(float32_t) is not 4 bytes");
 static_assert(sizeof(float64_t) == 8, "sizeof(float64_t) is not 8 bytes");
+
+

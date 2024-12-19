@@ -23,6 +23,10 @@ struct ExportLayer
 	void* channelData[MAX_CHANNEL_COUNT];
 	uint32_t channelSize[MAX_CHANNEL_COUNT];
 	uint16_t channelCompression[MAX_CHANNEL_COUNT];
+
+    bool isTransparencyLocked;
+    bool isCompositeLocked;
+    bool isPositionLocked;
 };
 
 PSD_NAMESPACE_END

@@ -54,6 +54,10 @@ void SetJpegThumbnail(ExportDocument* document, Allocator* allocator, uint32_t w
 unsigned int AddLayer(ExportDocument* document, Allocator* allocator, const char* name);
 
 /// \ingroup Exporter
+/// Updates a locks of layer to inserted values.
+void UpdateLayerLocks(ExportDocument* document, Allocator* allocator, unsigned int layerIndex, bool isTransparencyLocked, bool isCompositeLocked, bool isPositionLocked);
+
+/// \ingroup Exporter
 /// Updates a layer with planar 8-bit data. The function internally takes ownership over all data, so planar image data passed to this function can be freed afterwards.
 /// Planar data must hold "width*height" bytes, where width = \a right - \a left and height = \a botttom - \a top.
 /// Note that individual layers can be smaller and/or larger than the canvas in PSD documents.
