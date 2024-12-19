@@ -35,6 +35,13 @@ struct ExportDocument
 
 	void* mergedImageData[3u];
 
+	float32_t horizontalResolution;
+	uint16_t horizontalUnit;
+	uint16_t widthUnit;
+	float32_t verticalResolution;
+	uint16_t verticalUnit;
+	uint16_t heightUnit;
+
 	AlphaChannel alphaChannels[MAX_ALPHA_CHANNEL_COUNT];
 	uint16_t alphaChannelCount;
 	void* alphaChannelData[MAX_ALPHA_CHANNEL_COUNT];

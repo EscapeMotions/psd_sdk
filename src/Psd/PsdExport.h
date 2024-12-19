@@ -36,6 +36,10 @@ unsigned int AddMetaData(ExportDocument* document, Allocator* allocator, const c
 /// Updates existing meta data at the given \a index.
 void UpdateMetaData(ExportDocument* document, Allocator* allocator, unsigned int index, const char* name, const char* value);
 
+/// \ingroup Exporter
+/// Sets resolution info of a document.
+void SetResolutionInfo(ExportDocument* document, Allocator* allocator, float32_t horizontalResolution, uint16_t horizontalUnit, uint16_t widthUnit, float32_t verticalResolution, uint16_t verticalUnit, uint16_t heightUnit);
+
 
 /// \ingroup Exporter
 /// Sets the ICC profile of a document. The contents of \a rawProfileData are copied.

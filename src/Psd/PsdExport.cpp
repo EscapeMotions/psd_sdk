@@ -65,7 +65,7 @@ PSD_NAMESPACE_BEGIN
 		return newString;
 	}
 
-	
+
 	// ---------------------------------------------------------------------------------------------------------------------
 	// ---------------------------------------------------------------------------------------------------------------------
 	static void DestroyString(Allocator* allocator, char*& str)
@@ -223,7 +223,7 @@ PSD_NAMESPACE_BEGIN
 	{
 		uint32_t size = 0u;
 		size += sizeof(uint32_t);			// signature
-		size += sizeof(uint16_t);			// resource ID		
+		size += sizeof(uint16_t);			// resource ID
 		size += 2u;							// padded name, 2 zero bytes
 		size += sizeof(uint32_t);			// resource size
 
@@ -272,6 +272,12 @@ PSD_NAMESPACE_BEGIN
 		return document->thumbnail->binaryJpegSize + 28u;
 	}
 
+	// ---------------------------------------------------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------------------------------------------------
+	static uint32_t GetResolutionResourceSize()
+	{
+		return 2 * (sizeof(uint32_t) + sizeof(uint16_t) + sizeof(uint16_t));
+	}
 
 	// ---------------------------------------------------------------------------------------------------------------------
 	// ---------------------------------------------------------------------------------------------------------------------
@@ -346,6 +352,13 @@ ExportDocument* CreateExportDocument(Allocator* allocator, unsigned int canvasWi
 	document->mergedImageData[0] = nullptr;
 	document->mergedImageData[1] = nullptr;
 	document->mergedImageData[2] = nullptr;
+
+	document->horizontalResolution = 0.0f;
+	document->horizontalUnit = 0u;
+	document->widthUnit = 0u;
+	document->verticalResolution = 0.0f;
+	document->verticalUnit = 0u;
+	document->heightUnit = 0u;
 
 	document->alphaChannelCount = 0u;
 
@@ -443,6 +456,20 @@ void UpdateMetaData(ExportDocument* document, Allocator* allocator, unsigned int
 	attribute->value = CreateString(allocator, value);
 }
 
+
+// ---------------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
+void SetResolutionInfo(ExportDocument* document, Allocator* allocator,
+	float32_t horizontalResolution, uint16_t horizontalUnit, uint16_t widthUnit,
+	float32_t verticalResolution, uint16_t verticalUnit, uint16_t heightUnit)
+{
+	document->horizontalResolution = horizontalResolution;
+	document->horizontalUnit = horizontalUnit;
+	document->widthUnit = widthUnit;
+	document->verticalResolution = verticalResolution;
+	document->verticalUnit = verticalUnit;
+	document->heightUnit = heightUnit;
+}
 
 // ---------------------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------------------
@@ -1024,6 +1051,7 @@ void WriteDocument(ExportDocument* document, Allocator* allocator, File* file)
 		const bool hasIccProfile = (document->iccProfile != nullptr);
 		const bool hasExifData = (document->exifData != nullptr);
 		const bool hasThumbnail = (document->thumbnail != nullptr);
+		const bool hasResolution = (document->horizontalResolution != 0.0f || document->verticalResolution != 0.0f);
 		const bool hasAlphaChannels = (document->alphaChannelCount != 0u);
 		const bool hasImageResources = (hasMetaData || hasIccProfile || hasExifData || hasThumbnail || hasAlphaChannels);
 
@@ -1034,6 +1062,7 @@ void WriteDocument(ExportDocument* document, Allocator* allocator, File* file)
 			const uint32_t iccProfileSize = hasIccProfile ? GetIccProfileResourceSize(document) : 0u;
 			const uint32_t exifDataSize = hasExifData ? GetExifDataResourceSize(document) : 0u;
 			const uint32_t thumbnailSize = hasThumbnail ? GetThumbnailResourceSize(document) : 0u;
+			const uint32_t resolutionInfoSize = hasResolution ? GetResolutionResourceSize() : 0u;
 			const uint32_t displayInfoSize = hasAlphaChannels ? GetDisplayInfoResourceSize(document) : 0u;
 			const uint32_t channelNamesSize = hasAlphaChannels ? GetChannelNamesResourceSize(document) : 0u;
 			const uint32_t unicodeChannelNamesSize = hasAlphaChannels ? GetUnicodeChannelNamesResourceSize(document) : 0u;
@@ -1132,6 +1161,31 @@ void WriteDocument(ExportDocument* document, Allocator* allocator, File* file)
 
 					writer.Write(document->thumbnail->binaryJpeg, document->thumbnail->binaryJpegSize);
 				}
+				const uint64_t bytesWritten = writer.GetPosition() - start;
+				if (bytesWritten & 1ull)
+				{
+					// write padding byte
+					fileUtil::WriteToFileBE(writer, static_cast<uint8_t>(0u));
+				}
+			}
+
+			if (hasResolution)
+			{
+				WriteImageResource(writer, imageResource::RESOLUTION_INFO, resolutionInfoSize);
+
+				const uint64_t start = writer.GetPosition();
+
+				uint32_t horizontalResolution = static_cast<uint32_t>(document->horizontalResolution * 65536.0f);
+				uint32_t verticalResolution = static_cast<uint32_t>(document->verticalResolution * 65536.0f);
+
+				fileUtil::WriteToFileBE(writer, horizontalResolution);
+				fileUtil::WriteToFileBE(writer, document->horizontalUnit);
+				fileUtil::WriteToFileBE(writer, document->widthUnit);
+
+				fileUtil::WriteToFileBE(writer, verticalResolution);
+				fileUtil::WriteToFileBE(writer, document->verticalUnit);
+				fileUtil::WriteToFileBE(writer, document->heightUnit);
+
 				const uint64_t bytesWritten = writer.GetPosition() - start;
 				if (bytesWritten & 1ull)
 				{
