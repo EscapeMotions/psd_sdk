@@ -276,7 +276,7 @@ PSD_NAMESPACE_BEGIN
 	// ---------------------------------------------------------------------------------------------------------------------
 	static uint32_t GetResolutionResourceSize()
 	{
-		return 2 * (sizeof(uint32_t) + sizeof(uint16_t) + sizeof(uint16_t));
+		return 2u * (sizeof(uint32_t) + sizeof(uint16_t) + sizeof(uint16_t));
 	}
 
 	// ---------------------------------------------------------------------------------------------------------------------
@@ -1072,6 +1072,7 @@ void WriteDocument(ExportDocument* document, Allocator* allocator, File* file)
 			sectionLength += hasIccProfile ? bitUtil::RoundUpToMultiple(GetImageResourceSize() + iccProfileSize, 2u) : 0u;
 			sectionLength += hasExifData ? bitUtil::RoundUpToMultiple(GetImageResourceSize() + exifDataSize, 2u) : 0u;
 			sectionLength += hasThumbnail ? bitUtil::RoundUpToMultiple(GetImageResourceSize() + thumbnailSize, 2u) : 0u;
+			sectionLength += hasResolution ? bitUtil::RoundUpToMultiple(GetImageResourceSize() + resolutionInfoSize, 2u) : 0u;
 			sectionLength += hasAlphaChannels ? bitUtil::RoundUpToMultiple(GetImageResourceSize() + displayInfoSize, 2u) : 0u;
 			sectionLength += hasAlphaChannels ? bitUtil::RoundUpToMultiple(GetImageResourceSize() + channelNamesSize, 2u) : 0u;
 			sectionLength += hasAlphaChannels ? bitUtil::RoundUpToMultiple(GetImageResourceSize() + unicodeChannelNamesSize, 2u) : 0u;
@@ -1294,10 +1295,8 @@ void WriteDocument(ExportDocument* document, Allocator* allocator, File* file)
     const bool is8BitData = (document->bitsPerChannel == 8u);
     if (is8BitData)
 	{
-        std::cout << "8 - bit data" << std::endl;
 		// 8-bit data
 		// layer mask section length also includes global layer mask info marker. layer info follows directly after that
-        // TODO First length addition
         const uint32_t layerMaskSectionLength = layerInfoSectionLength + 4u;
 		fileUtil::WriteToFileBE(writer, layerMaskSectionLength);
 	}
@@ -1329,7 +1328,6 @@ void WriteDocument(ExportDocument* document, Allocator* allocator, File* file)
 		}
 	}
 
-    // std::cout << "LayerInfoSectionLengthStart " << writer.GetPosition() << std::endl;
     fileUtil::WriteToFileBE(writer, layerInfoSectionLength);
 
 	// layer count
@@ -1380,9 +1378,7 @@ void WriteDocument(ExportDocument* document, Allocator* allocator, File* file)
         fileUtil::WriteToFileBE(writer, extraDataLength);
 
         const uint32_t layerMaskDataLength = 0u;
-        std::cout << "LayerMaskDataStart: " << writer.GetPosition() << std::endl;
 		fileUtil::WriteToFileBE(writer, layerMaskDataLength);
-        std::cout << "LayerMaskDataLength: " << layerMaskDataLength << std::endl;
 
         const uint32_t layerBlendingRangesDataLength = 0u;
 		fileUtil::WriteToFileBE(writer, layerBlendingRangesDataLength);
