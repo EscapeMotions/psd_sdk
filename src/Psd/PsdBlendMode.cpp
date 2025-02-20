@@ -54,6 +54,43 @@ namespace blendMode
 		#undef IMPLEMENT_CASE
 	}
 
+	// ---------------------------------------------------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------------------------------------------------
+	uint32_t EnumToKey(Enum value)
+	{
+	    switch (value)
+	    {
+	    case PASS_THROUGH: return util::Key<'p', 'a', 's', 's'>::VALUE;
+	    case NORMAL: return util::Key<'n', 'o', 'r', 'm'>::VALUE;
+	    case DISSOLVE: return util::Key<'d', 'i', 's', 's'>::VALUE;
+	    case DARKEN: return util::Key<'d', 'a', 'r', 'k'>::VALUE;
+	    case MULTIPLY: return util::Key<'m', 'u', 'l', ' '>::VALUE;
+	    case COLOR_BURN: return util::Key<'i', 'd', 'i', 'v'>::VALUE;
+	    case LINEAR_BURN: return util::Key<'l', 'b', 'r', 'n'>::VALUE;
+	    case DARKER_COLOR: return util::Key<'d', 'k', 'C', 'l'>::VALUE;
+	    case LIGHTEN: return util::Key<'l', 'i', 't', 'e'>::VALUE;
+	    case SCREEN: return util::Key<'s', 'c', 'r', 'n'>::VALUE;
+	    case COLOR_DODGE: return util::Key<'d', 'i', 'v', ' '>::VALUE;
+	    case LINEAR_DODGE: return util::Key<'l', 'd', 'd', 'g'>::VALUE;
+	    case LIGHTER_COLOR: return util::Key<'l', 'g', 'C', 'l'>::VALUE;
+	    case OVERLAY: return util::Key<'o', 'v', 'e', 'r'>::VALUE;
+	    case SOFT_LIGHT: return util::Key<'s', 'L', 'i', 't'>::VALUE;
+	    case HARD_LIGHT: return util::Key<'h', 'L', 'i', 't'>::VALUE;
+	    case VIVID_LIGHT: return util::Key<'v', 'L', 'i', 't'>::VALUE;
+	    case LINEAR_LIGHT: return util::Key<'l', 'L', 'i', 't'>::VALUE;
+	    case PIN_LIGHT: return util::Key<'p', 'L', 'i', 't'>::VALUE;
+	    case HARD_MIX: return util::Key<'h', 'M', 'i', 'x'>::VALUE;
+	    case DIFFERENCE: return util::Key<'d', 'i', 'f', 'f'>::VALUE;
+	    case EXCLUSION: return util::Key<'s', 'm', 'u', 'd'>::VALUE;
+	    case SUBTRACT: return util::Key<'f', 's', 'u', 'b'>::VALUE;
+	    case DIVIDE: return util::Key<'f', 'd', 'i', 'v'>::VALUE;
+	    case HUE: return util::Key<'h', 'u', 'e', ' '>::VALUE;
+	    case SATURATION: return util::Key<'s', 'a', 't', ' '>::VALUE;
+	    case COLOR: return util::Key<'c', 'o', 'l', 'r'>::VALUE;
+	    case LUMINOSITY: return util::Key<'l', 'u', 'm', ' '>::VALUE;
+	    default: return 0;
+	    }
+	}
 
 	// ---------------------------------------------------------------------------------------------------------------------
 	// ---------------------------------------------------------------------------------------------------------------------

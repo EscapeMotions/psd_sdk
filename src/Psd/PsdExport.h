@@ -8,6 +8,7 @@
 #include "PsdExportChannel.h"
 #include "PsdCompressionType.h"
 #include "PsdAlphaChannel.h"
+#include "PsdBlendMode.h"
 
 
 PSD_NAMESPACE_BEGIN
@@ -66,6 +67,10 @@ void UpdateLayerLocks(ExportDocument* document, Allocator* allocator, unsigned i
 /// Updates a type of given layer.
 /// Default layer type is zero (Any other type of layer)
 void UpdateLayerType(ExportDocument* document, Allocator* allocator, unsigned int layerIndex, uint32_t layerType);
+
+/// \ingroup Exporter
+/// Sets blend mode
+void UpdateLayerBlendMode(ExportDocument* document, Allocator* allocator, unsigned int layerIndex, blendMode::Enum mode);
 
 /// \ingroup Exporter
 /// Updates a layer with planar 8-bit data. The function internally takes ownership over all data, so planar image data passed to this function can be freed afterwards.

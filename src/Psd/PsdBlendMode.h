@@ -48,6 +48,9 @@ namespace blendMode
 	/// Converts a given \a key to the corresponding \ref blendMode::Enum.
 	Enum KeyToEnum(uint32_t key);
 
+	/// Converts a given \a enum to the corresponding \ref key.
+	uint32_t EnumToKey(Enum e);
+
 	/// Converts any of the \ref blendMode::Enum values into a string literal.
 	const char* ToString(Enum value);
 	const char* ToShortString(Enum value);

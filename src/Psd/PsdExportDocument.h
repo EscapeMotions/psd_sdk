@@ -19,7 +19,7 @@ struct Thumbnail;
 struct ExportDocument
 {
 	static const unsigned int MAX_ATTRIBUTE_COUNT = 128u;
-	static const unsigned int MAX_LAYER_COUNT = 128u;
+	static const unsigned int MAX_LAYER_COUNT = 256u;
 	static const unsigned int MAX_ALPHA_CHANNEL_COUNT = 128u;
 
 	uint32_t width;

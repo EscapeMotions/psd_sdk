@@ -19,6 +19,7 @@ struct ExportLayer
 	int32_t bottom;
 	int32_t right;
 	char* name;
+	blendMode::Enum blendMode;
 
 	void* channelData[MAX_CHANNEL_COUNT];
 	uint32_t channelSize[MAX_CHANNEL_COUNT];

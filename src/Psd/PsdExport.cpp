@@ -531,6 +531,7 @@ unsigned int AddLayer(ExportDocument* document, Allocator* allocator, const char
     layer->isPositionLocked = false;
 
 	layer->type = 0u;
+	layer->blendMode = blendMode::NORMAL;
 
 	return index;
 }
@@ -808,6 +809,16 @@ void UpdateLayerType(ExportDocument* document, Allocator* allocator, unsigned in
 	ExportLayer* layer = document->layers + layerIndex;
 
 	layer->type = layerType;
+}
+
+
+// ---------------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
+void UpdateLayerBlendMode(ExportDocument* document, Allocator* allocator, unsigned int layerIndex, blendMode::Enum mode)
+{
+	ExportLayer* layer = document->layers + layerIndex;
+
+	layer->blendMode = mode;
 }
 
 
@@ -1367,7 +1378,7 @@ void WriteDocument(ExportDocument* document, Allocator* allocator, File* file)
 		const uint8_t clipping = 0u;
 		const uint8_t flags = 0u;
 		const uint8_t filler = 0u;
-		fileUtil::WriteToFileBE(writer, util::Key<'n', 'o', 'r', 'm'>::VALUE);
+		fileUtil::WriteToFileBE(writer, blendMode::EnumToKey(layer->blendMode));
 		fileUtil::WriteToFileBE(writer, opacity);
 		fileUtil::WriteToFileBE(writer, clipping);
 		fileUtil::WriteToFileBE(writer, flags);
