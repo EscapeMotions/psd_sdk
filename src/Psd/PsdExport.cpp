@@ -4,6 +4,8 @@
 #include "PsdPch.h"
 #include "PsdExport.h"
 
+#include <algorithm>
+
 #include "PsdMemoryUtil.h"
 #include "PsdImageResourceType.h"
 #include "PsdExportDocument.h"
@@ -16,9 +18,10 @@
 #include "PsdThumbnail.h"
 #include "Psdminiz.h"
 #include <string.h>
-
+#include <cstring>
 
 #include <iostream>
+#include <memory>
 
 #include "PsdLayerType.h"
 
@@ -52,16 +55,16 @@ PSD_NAMESPACE_BEGIN
 
 	// ---------------------------------------------------------------------------------------------------------------------
 	// ---------------------------------------------------------------------------------------------------------------------
-	static char* CreateString(Allocator* allocator, const char* str)
+	static char* CreateString(const char* str)
 	{
-		const size_t length = strlen(str);
-		const size_t paddedLength = bitUtil::RoundUpToMultiple(length + 1u, static_cast<size_t>(4u));
-		char* newString = memoryUtil::AllocateArray<char>(allocator, paddedLength);
+		if (!str) return nullptr;
 
-		// clear and copy null terminator as well
-		memset(newString, 0, paddedLength);
-		memcpy(newString, str, length + 1u);
+		const size_t length = std::strlen(str);
+		const size_t paddedeLength = bitUtil::RoundUpToMultiple(length + 1u, static_cast<size_t>(4u));
 
+		char* newString = new char[paddedeLength]();
+
+		std::copy_n(str, length + 1, newString);
 		return newString;
 	}
 
@@ -70,7 +73,7 @@ PSD_NAMESPACE_BEGIN
 	// ---------------------------------------------------------------------------------------------------------------------
 	static void DestroyString(Allocator* allocator, char*& str)
 	{
-		memoryUtil::FreeArray(allocator, str);
+		delete[] str;
 		str = nullptr;
 	}
 
@@ -167,12 +170,12 @@ PSD_NAMESPACE_BEGIN
 		const uint8_t nameLength = static_cast<uint8_t>(strlen(layer->name));
         // 4 signature, 4 key, 4 length, 4 locks themselves
         const uint8_t locksLength = 16u;
-		// 4 signature, 4 key, 4 length, 4 type itself
-		const uint8_t typeLength = 16;
+		// 4 signature, 4 key, 4 length, 4 type itself, 4 signature, 4 group blend mode
+		const uint8_t layerTypeLength = 24u;
         const uint32_t paddedNameLength = bitUtil::RoundUpToMultiple(nameLength + 1u, 4u);
 
 		// includes the lengths of the layer mask data and layer blending ranges data
-		return (4u + 4u + paddedNameLength + locksLength + typeLength);
+		return (4u + 4u + paddedNameLength + locksLength + layerTypeLength);
 	}
 
 
@@ -208,7 +211,7 @@ PSD_NAMESPACE_BEGIN
 		uint32_t size = 2u + 4u;
 		for (unsigned int i = 0u; i < document->layerCount; ++i)
 		{
-			ExportLayer* layer = document->layers + i;
+			ExportLayer* layer = document->layers[i].get();
 			size += 16u + 2u + GetChannelCount(layer) * 6u + 4u + 4u + 4u + GetExtraDataLength(layer) + 4u;
 			size += GetChannelDataSize(layer) + GetChannelCount(layer) * 2u;
 		}
@@ -407,12 +410,12 @@ void DestroyExportDocument(ExportDocument*& document, Allocator* allocator)
 
 	for (unsigned int i = 0u; i < document->layerCount; ++i)
 	{
-		DestroyString(allocator, document->layers[i].name);
+		DestroyString(allocator, document->layers[i]->name);
 
 		for (unsigned int j = 0u; j < ExportLayer::MAX_CHANNEL_COUNT; ++j)
 		{
-			const uint16_t compression = document->layers[i].channelCompression[j];
-			void*& data = document->layers[i].channelData[j];
+			const uint16_t compression = document->layers[i]->channelCompression[j];
+			void*& data = document->layers[i]->channelData[j];
 			if ((compression == compressionType::ZIP) ||
 				(compression == compressionType::ZIP_WITH_PREDICTION))
 			{
@@ -452,8 +455,8 @@ void UpdateMetaData(ExportDocument* document, Allocator* allocator, unsigned int
 	ExportMetaDataAttribute* attribute = document->attributes + index;
 	DestroyString(allocator, attribute->name);
 	DestroyString(allocator, attribute->value);
-	attribute->name = CreateString(allocator, name);
-	attribute->value = CreateString(allocator, value);
+	attribute->name = CreateString(name);
+	attribute->value = CreateString(value);
 }
 
 
@@ -518,20 +521,24 @@ void SetJpegThumbnail(ExportDocument* document, Allocator* allocator, uint32_t w
 
 // ---------------------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------------------
-unsigned int AddLayer(ExportDocument* document, Allocator* allocator, const char* name)
+unsigned int AddLayer(ExportDocument* document, /*Allocator* allocator, */const char* name)
 {
 	const unsigned int index = document->layerCount;
 	++document->layerCount;
 
-	ExportLayer* layer = document->layers + index;
-	layer->name = CreateString(allocator, name);
+	// ExportLayer* layer = document->layers + index;
+	document->layers.emplace_back(std::make_unique<ExportLayer>());
+	ExportLayer& layer = *document->layers.back();
 
-    layer->isTransparencyLocked = false;
-    layer->isCompositeLocked = false;
-    layer->isPositionLocked = false;
+	layer.name = CreateString(name);
+	layer.isTransparencyLocked = false;
+	layer.isCompositeLocked = false;
+	layer.isPositionLocked = false;
 
-	layer->type = 0u;
-	layer->blendMode = blendMode::NORMAL;
+	layer.type = 0u;
+	layer.blendMode = blendMode::NORMAL;
+	layer.opacity = 255u;
+	layer.isVisible = true;
 
 	return index;
 }
@@ -733,7 +740,7 @@ void UpdateLayerImpl(ExportDocument* document, Allocator* allocator, unsigned in
 		PSD_ASSERT((channel == exportChannel::RED) || (channel == exportChannel::GREEN) || (channel == exportChannel::BLUE) || (channel == exportChannel::ALPHA), "Wrong channel for this color mode.");
 	}
 
-	ExportLayer* layer = document->layers + layerIndex;
+	ExportLayer* layer = document->layers[layerIndex].get();
 	const unsigned int channelIndex = GetChannelIndex(channel);
 
 	// free old data
@@ -793,32 +800,46 @@ void UpdateLayerImpl(ExportDocument* document, Allocator* allocator, unsigned in
 
 // ---------------------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------------------
-void UpdateLayerLocks(ExportDocument* document, Allocator* allocator, unsigned int layerIndex, bool isTransparencyLocked, bool isCompositeLocked, bool isPositionLocked){
-    ExportLayer* layer = document->layers + layerIndex;
+void UpdateLayerLocks(ExportDocument* document, unsigned int layerIndex, bool isTransparencyLocked, bool isCompositeLocked, bool isPositionLocked){
+	ExportLayer& layer = *document->layers[layerIndex];
 
-    layer->isTransparencyLocked = isTransparencyLocked;
-    layer->isCompositeLocked = isCompositeLocked;
-    layer->isPositionLocked = isPositionLocked;
+	layer.isTransparencyLocked = isTransparencyLocked;
+	layer.isCompositeLocked = isCompositeLocked;
+	layer.isPositionLocked = isPositionLocked;
 }
 
 
 // ---------------------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------------------
-void UpdateLayerType(ExportDocument* document, Allocator* allocator, unsigned int layerIndex, uint32_t layerType)
+void UpdateLayerType(ExportDocument* document, unsigned int layerIndex, uint32_t layerType)
 {
-	ExportLayer* layer = document->layers + layerIndex;
-
-	layer->type = layerType;
+	ExportLayer& layer = *document->layers[layerIndex];
+	layer.type = layerType;
 }
 
 
 // ---------------------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------------------
-void UpdateLayerBlendMode(ExportDocument* document, Allocator* allocator, unsigned int layerIndex, blendMode::Enum mode)
+void UpdateLayerBlendMode(ExportDocument* document, unsigned int layerIndex, blendMode::Enum mode)
 {
-	ExportLayer* layer = document->layers + layerIndex;
+	ExportLayer& layer = *document->layers[layerIndex];
+	layer.blendMode = mode;
+}
 
-	layer->blendMode = mode;
+
+// ---------------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
+void UpdateLayerOpacity(ExportDocument* document, unsigned int layerIndex, uint8_t opacity)
+{
+	document->layers[layerIndex]->opacity = opacity;
+}
+
+
+// ---------------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
+void UpdateLayerVisibility(ExportDocument* document, unsigned int layerIndex, bool isVisible)
+{
+	document->layers[layerIndex]->isVisible = isVisible;
 }
 
 
@@ -1347,7 +1368,7 @@ void WriteDocument(ExportDocument* document, Allocator* allocator, File* file)
 	// per-layer info
 	for (unsigned int i = 0u; i < document->layerCount; ++i)
 	{
-		ExportLayer* layer = document->layers + i;
+		ExportLayer* layer = document->layers[i].get();
 		fileUtil::WriteToFileBE(writer, layer->top);
 		fileUtil::WriteToFileBE(writer, layer->left);
 		fileUtil::WriteToFileBE(writer, layer->bottom);
@@ -1374,9 +1395,10 @@ void WriteDocument(ExportDocument* document, Allocator* allocator, File* file)
 		fileUtil::WriteToFileBE(writer, util::Key<'8', 'B', 'I', 'M'>::VALUE);
 
 		// blend mode data
-		const uint8_t opacity = 255u;
+		const uint8_t opacity = layer->opacity;
 		const uint8_t clipping = 0u;
-		const uint8_t flags = 0u;
+		uint8_t flags = 0u;
+		flags = layer->isVisible ? 0u : flags | (1u << 1);
 		const uint8_t filler = 0u;
 		fileUtil::WriteToFileBE(writer, blendMode::EnumToKey(layer->blendMode));
 		fileUtil::WriteToFileBE(writer, opacity);
@@ -1400,34 +1422,36 @@ void WriteDocument(ExportDocument* document, Allocator* allocator, File* file)
 		fileUtil::WriteToFileBE(writer, nameLength);
         writer.Write(layer->name, paddedNameLength - 1u);
 
-        // lock information
-        fileUtil::WriteToFileBE(writer, util::Key<'8', 'B', 'I', 'M'>::VALUE);
-        fileUtil::WriteToFileBE(writer, util::Key<'l', 's', 'p', 'f'>::VALUE);
 
-        const uint32_t locksLength = 4u;
-        fileUtil::WriteToFileBE(writer, locksLength);
 
-        uint32_t lockValue = 0;
-        lockValue |= layer->isTransparencyLocked ? (0x01 << 0) : 0;
-        lockValue |= layer->isCompositeLocked ? (0x01 << 1) : 0;
-        lockValue |= layer->isPositionLocked ? (0x01 << 2) : 0;
-        fileUtil::WriteToFileBE(writer, lockValue);
+		// lock information
+		fileUtil::WriteToFileBE(writer, util::Key<'8', 'B', 'I', 'M'>::VALUE);
+		fileUtil::WriteToFileBE(writer, util::Key<'l', 's', 'p', 'f'>::VALUE);
+
+		const uint32_t locksLength = 4u;
+		fileUtil::WriteToFileBE(writer, locksLength);
+
+		uint32_t lockValue = 0;
+		lockValue |= layer->isTransparencyLocked ? (0x01 << 0) : 0;
+		lockValue |= layer->isCompositeLocked ? (0x01 << 1) : 0;
+		lockValue |= layer->isPositionLocked ? (0x01 << 2) : 0;
+		fileUtil::WriteToFileBE(writer, lockValue);
 
 		// section divider setting
 		fileUtil::WriteToFileBE(writer, util::Key<'8', 'B', 'I', 'M'>::VALUE);
 		fileUtil::WriteToFileBE(writer, util::Key<'l', 's', 'c', 't'>::VALUE);
-
-		const uint32_t typeLength = 4u;
+		const uint32_t typeLength = 12u;
 		fileUtil::WriteToFileBE(writer, typeLength);
+
 		fileUtil::WriteToFileBE(writer, layer->type);
-
-
+		fileUtil::WriteToFileBE(writer, util::Key<'8', 'B', 'I', 'M'>::VALUE);
+		fileUtil::WriteToFileBE(writer, blendMode::EnumToKey(layer->blendMode));
 	}
 
 	// per-layer data
 	for (unsigned int i = 0u; i < document->layerCount; ++i)
 	{
-		ExportLayer* layer = document->layers + i;
+		ExportLayer* layer = document->layers[i].get();
 
 		// per-channel data
 		for (unsigned int j = 0u; j < ExportLayer::MAX_CHANNEL_COUNT; ++j)

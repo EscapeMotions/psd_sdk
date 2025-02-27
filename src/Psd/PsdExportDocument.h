@@ -3,6 +3,9 @@
 
 #pragma once
 
+#include <memory>
+#include <vector>
+
 #include "PsdExportColorMode.h"
 #include "PsdExportMetaDataAttribute.h"
 #include "PsdExportLayer.h"
@@ -30,7 +33,7 @@ struct ExportDocument
 	ExportMetaDataAttribute attributes[MAX_ATTRIBUTE_COUNT];
 	unsigned int attributeCount;
 
-	ExportLayer layers[MAX_LAYER_COUNT];
+	std::vector<std::unique_ptr<ExportLayer>> layers;
 	uint16_t layerCount;
 
 	void* mergedImageData[3u];

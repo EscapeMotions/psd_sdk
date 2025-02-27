@@ -57,20 +57,32 @@ void SetJpegThumbnail(ExportDocument* document, Allocator* allocator, uint32_t w
 
 /// \ingroup Exporter
 /// Adds a layer to a document. The returned index can be used to update layer data by a call to \ref UpdateLayer.
-unsigned int AddLayer(ExportDocument* document, Allocator* allocator, const char* name);
+// unsigned int AddLayer(ExportDocument* document, Allocator* allocator, const char* name);
+unsigned int AddLayer(ExportDocument* document, const char* name);
 
 /// \ingroup Exporter
 /// Updates a locks of layer to inserted values.
-void UpdateLayerLocks(ExportDocument* document, Allocator* allocator, unsigned int layerIndex, bool isTransparencyLocked, bool isCompositeLocked, bool isPositionLocked);
+void UpdateLayerLocks(ExportDocument* document, unsigned int layerIndex, bool isTransparencyLocked, bool isCompositeLocked, bool isPositionLocked);
 
 /// \ingroup Exporter
 /// Updates a type of given layer.
-/// Default layer type is zero (Any other type of layer)
-void UpdateLayerType(ExportDocument* document, Allocator* allocator, unsigned int layerIndex, uint32_t layerType);
+/// Default layer type is zero (Any other type of layer).
+void UpdateLayerType(ExportDocument* document, unsigned int layerIndex, uint32_t layerType);
 
 /// \ingroup Exporter
-/// Sets blend mode
-void UpdateLayerBlendMode(ExportDocument* document, Allocator* allocator, unsigned int layerIndex, blendMode::Enum mode);
+/// Updates a blend mode of given layer.
+/// Default layer type is normal.
+void UpdateLayerBlendMode(ExportDocument* document, unsigned int layerIndex, blendMode::Enum mode);
+
+/// \ingroup Exporter
+/// Updates an opacity of given layer.
+/// Default opacity is 255.
+void UpdateLayerOpacity(ExportDocument* document, unsigned int layerIndex, uint8_t opacity);
+
+/// \ingroup Exporter
+/// Updates a visibility of given layer.
+/// By default, the layer is visible.
+void UpdateLayerVisibility(ExportDocument* document, unsigned int layerIndex, bool isVisible);
 
 /// \ingroup Exporter
 /// Updates a layer with planar 8-bit data. The function internally takes ownership over all data, so planar image data passed to this function can be freed afterwards.
