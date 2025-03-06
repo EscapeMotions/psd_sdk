@@ -28,9 +28,10 @@
 #include <cstring>
 
 #include <iostream>
-PSD_NAMESPACE_BEGIN
 
-namespace
+#include "PsdSheetColor.h"
+PSD_NAMESPACE_BEGIN
+	namespace
 {
 	struct MaskData
 	{
@@ -532,6 +533,7 @@ namespace
                 layer->isTransparencyLocked = false;
                 layer->isCompositeLocked = false;
                 layer->isPositionLocked = false;
+				layer->sheetColorKey = 0u;
 				layer->isGradientFill = false;
 
 				layer->top = fileUtil::ReadFromFileBE<int32_t>(reader);
@@ -764,6 +766,15 @@ namespace
                         layer->isCompositeLocked = compositeLocked;
                         layer->isPositionLocked = positionLocked;
                     }
+					else if (key == util::Key<'l', 'c', 'l', 'r'>::VALUE)
+					{
+						uint16_t color1 = fileUtil::ReadFromFileBE<uint16_t>(reader);
+						uint16_t color2 = fileUtil::ReadFromFileBE<uint16_t>(reader); // Second color is unused
+						uint16_t color3 = fileUtil::ReadFromFileBE<uint16_t>(reader); // Third color is unused
+						uint16_t color4 = fileUtil::ReadFromFileBE<uint16_t>(reader); // Fourth color is unused
+
+						layer->sheetColorKey = color1;
+					}
 					else if (key == util::Key<'G', 'd', 'F', 'l'>::VALUE)
 					{
 						layer->isGradientFill = true;

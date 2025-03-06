@@ -105,6 +105,8 @@ set(psd_source_types
   PsdPlanarImage.h
   PsdSection.h
   PsdVectorMask.h
+  PsdSheetColor.cpp
+  PsdSheetColor.h
 )
 
 set(psd_source_util

@@ -4,11 +4,11 @@
 #pragma once
 
 #include "PsdFixedSizeString.h"
+#include "PsdSheetColor.h"
 
 
 PSD_NAMESPACE_BEGIN
-
-struct Channel;
+	struct Channel;
 struct TransparencyMask;
 struct LayerMask;
 struct VectorMask;
@@ -46,6 +46,8 @@ struct Layer
     bool isCompositeLocked;             ///< If the layer has a composite locked (false by default).
     bool isTransparencyLocked;          ///< If the layer has a transparency locked (false by default).
     bool isPositionLocked;              ///< If the layer has a position locked (false by default).
+
+	uint16_t sheetColorKey;				///< The layer's sheet color key. It is shown in layer browser.
 
 	bool isGradientFill;				///< If the layer type is GradientFill
 };
