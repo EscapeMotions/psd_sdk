@@ -25,6 +25,7 @@ struct ExportLayer
 
 	blendMode::Enum blendMode;
 	uint8_t opacity;
+	uint8_t clipping;
 	bool isVisible;
 
 	void* channelData[MAX_CHANNEL_COUNT];

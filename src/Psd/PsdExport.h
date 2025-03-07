@@ -84,6 +84,11 @@ void UpdateLayerBlendMode(ExportDocument* document, unsigned int layerIndex, ble
 void UpdateLayerOpacity(ExportDocument* document, unsigned int layerIndex, uint8_t opacity);
 
 /// \ingroup Exporter
+/// Updates a clipping of given layer.
+/// Default clipping is false.
+void UpdateLayerClipping(ExportDocument* document, unsigned int layerIndex, bool isClipped);
+
+/// \ingroup Exporter
 /// Updates a visibility of given layer.
 /// By default, the layer is visible.
 void UpdateLayerVisibility(ExportDocument* document, unsigned int layerIndex, bool isVisible);

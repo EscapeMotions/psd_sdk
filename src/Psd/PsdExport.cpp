@@ -551,6 +551,7 @@ unsigned int AddLayer(ExportDocument* document, const char* name)
 	layer.layerMask = nullptr;
 	layer.blendMode = blendMode::NORMAL;
 	layer.opacity = 255u;
+	layer.clipping = 0u;
 	layer.isVisible = true;
 
 	return index;
@@ -860,6 +861,14 @@ void UpdateLayerBlendMode(ExportDocument* document, unsigned int layerIndex, ble
 void UpdateLayerOpacity(ExportDocument* document, unsigned int layerIndex, uint8_t opacity)
 {
 	document->layers[layerIndex]->opacity = opacity;
+}
+
+
+// ---------------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
+void UpdateLayerClipping(ExportDocument* document, unsigned int layerIndex, bool isClipped)
+{
+	document->layers[layerIndex]->clipping = isClipped;
 }
 
 
@@ -1424,7 +1433,7 @@ void WriteDocument(ExportDocument* document, Allocator* allocator, File* file)
 
 		// blend mode data
 		const uint8_t opacity = layer->opacity;
-		const uint8_t clipping = 0u;
+		const uint8_t clipping = layer->clipping;
 		uint8_t flags = 0u;
 		flags = layer->isVisible ? 0u : flags | (1u << 1);
 		const uint8_t filler = 0u;
