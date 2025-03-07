@@ -178,7 +178,7 @@ PSD_NAMESPACE_BEGIN
 			else if (layer->layerMask)
 			{
 				// no vector mask exists, so the layer mask is the only mask left
-				return GetExtents(layer->layerMask, width, height);
+				return GetExtents(layer->layerMask.get(), width, height);
 			}
 
 			PSD_ASSERT(false, "The code failed to create a mask for this type internally. This should never happen.");
@@ -189,7 +189,7 @@ PSD_NAMESPACE_BEGIN
 		else if (channel->type == channelType::LAYER_MASK)
 		{
 			// this type is only valid when there are two masks stored, in which case this always denotes the layer mask
-			return GetExtents(layer->layerMask, width, height);
+			return GetExtents(layer->layerMask.get(), width, height);
 		}
 
 		// this is a color channel which has the same size as the layer
@@ -518,7 +518,7 @@ PSD_NAMESPACE_BEGIN
 				layerCount = -layerCount;
 
 			layerMaskSection->layerCount = static_cast<unsigned int>(layerCount);
-			layerMaskSection->layers = memoryUtil::AllocateArray<Layer>(allocator, layerMaskSection->layerCount);
+			layerMaskSection->layers = new Layer[layerMaskSection->layerCount];
 
 			// read layer record for each layer
 			for (unsigned int i=0; i < layerMaskSection->layerCount; ++i)
@@ -583,9 +583,6 @@ PSD_NAMESPACE_BEGIN
 
 				const uint32_t extraDataLength = fileUtil::ReadFromFileBE<uint32_t>(reader);
 				const uint32_t layerMaskDataLength = fileUtil::ReadFromFileBE<uint32_t>(reader);
-
-                // std::cout << "extraDataLength" << extraDataLength << std::endl;
-                // std::cout << "layerMaskDataLength" << layerMaskDataLength << std::endl;
 
 				// the layer mask data section is weird. it may contain extra data for masks, such as density and feather parameters.
 				// there are 3 main possibilities:
@@ -670,10 +667,10 @@ PSD_NAMESPACE_BEGIN
 						else
 						{
 							PSD_ASSERT(layer->layerMask == nullptr, "A layer mask already exists.");
-							layer->layerMask = memoryUtil::Allocate<LayerMask>(allocator);
+							layer->layerMask = std::make_unique<LayerMask>();
 							layer->layerMask->data = nullptr;
 							layer->layerMask->fileOffset = 0ull;
-							ApplyMaskData(maskData[mask], layerFeather, layerDensity, layer->layerMask);
+							ApplyMaskData(maskData[mask], layerFeather, layerDensity, layer->layerMask.get());
 						}
 					}
 				}
@@ -1087,7 +1084,7 @@ void ExtractLayer(const Document* document, File* file, Allocator* allocator, La
 			{
 				// we don't have a vector but a layer mask, so this type denotes the layer mask
 				PSD_ASSERT(!layer->layerMask->data, "Layer mask data has already been assigned.");
-				MoveChannelToMask(channel, layer->layerMask);
+				MoveChannelToMask(channel, layer->layerMask.get());
 			}
 			else
 			{
@@ -1098,7 +1095,7 @@ void ExtractLayer(const Document* document, File* file, Allocator* allocator, La
 		{
 			PSD_ASSERT(layer->layerMask, "Layer mask must already exist.");
 			PSD_ASSERT(!layer->layerMask->data, "Layer mask data has already been assigned.");
-			MoveChannelToMask(channel, layer->layerMask);
+			MoveChannelToMask(channel, layer->layerMask.get());
 		}
 		else
 		{
@@ -1133,7 +1130,7 @@ void DestroyLayerMaskSection(LayerMaskSection*& section, Allocator* allocator)
 		{
 			allocator->Free(layer->layerMask->data);
 		}
-		memoryUtil::Free(allocator, layer->layerMask);
+		// memoryUtil::Free(allocator, layer->layerMask);
 
 		if (layer->vectorMask)
 		{
@@ -1141,7 +1138,7 @@ void DestroyLayerMaskSection(LayerMaskSection*& section, Allocator* allocator)
 		}
 		memoryUtil::Free(allocator, layer->vectorMask);
 	}
-	memoryUtil::FreeArray(allocator, section->layers);
+	delete[] section->layers;
 	memoryUtil::Free(allocator, section);
 }
 

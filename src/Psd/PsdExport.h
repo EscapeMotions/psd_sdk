@@ -70,6 +70,10 @@ void UpdateLayerLocks(ExportDocument* document, unsigned int layerIndex, bool is
 void UpdateLayerType(ExportDocument* document, unsigned int layerIndex, uint32_t layerType);
 
 /// \ingroup Exporter
+/// Updates a layer mask of given layer.
+void UpdateLayerMask(ExportDocument* document, unsigned int layerIndex, int top, int left, int bottom, int right, uint8_t defaultColor);
+
+/// \ingroup Exporter
 /// Updates a blend mode of given layer.
 /// Default layer type is normal.
 void UpdateLayerBlendMode(ExportDocument* document, unsigned int layerIndex, blendMode::Enum mode);

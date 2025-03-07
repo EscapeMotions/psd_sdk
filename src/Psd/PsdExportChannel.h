@@ -22,7 +22,10 @@ namespace exportChannel
 		BLUE,
 
 		// supported in all documents
-		ALPHA
+		ALPHA,
+
+		// supported in documents with layer mask
+		LAYER_OR_VECTOR_MASK
 	};
 }
 

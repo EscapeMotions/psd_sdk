@@ -3,9 +3,9 @@
 
 #pragma once
 
-#include "PsdFixedSizeString.h"
-#include "PsdSheetColor.h"
+#include <memory>
 
+#include "PsdFixedSizeString.h"
 
 PSD_NAMESPACE_BEGIN
 	struct Channel;
@@ -20,36 +20,36 @@ struct VectorMask;
 /// \sa LayerMaskSection Channel LayerMask VectorMask
 struct Layer
 {
-	Layer* parent;						///< The layer's parent layer, if any.
-	util::FixedSizeString name;			///< The ASCII name of the layer. Truncated to 31 characters in PSD files.
-	uint16_t* utf16Name;				///< The UTF16 name of the layer.
+	Layer* parent;							///< The layer's parent layer, if any.
+	util::FixedSizeString name;				///< The ASCII name of the layer. Truncated to 31 characters in PSD files.
+	uint16_t* utf16Name;					///< The UTF16 name of the layer.
 
-	int32_t top;						///< Top coordinate of the rectangle that encloses the layer.
-	int32_t left;						///< Left coordinate of the rectangle that encloses the layer.
-	int32_t bottom;						///< Bottom coordinate of the rectangle that encloses the layer.
-	int32_t right;						///< Right coordinate of the rectangle that encloses the layer.
+	int32_t top;							///< Top coordinate of the rectangle that encloses the layer.
+	int32_t left;							///< Left coordinate of the rectangle that encloses the layer.
+	int32_t bottom;							///< Bottom coordinate of the rectangle that encloses the layer.
+	int32_t right;							///< Right coordinate of the rectangle that encloses the layer.
 
-	Channel* channels;					///< An array of channels, having channelCount entries.
-	unsigned int channelCount;			///< The number of channels stored in the array.
+	Channel* channels;						///< An array of channels, having channelCount entries.
+	unsigned int channelCount;				///< The number of channels stored in the array.
 
-	LayerMask* layerMask;				///< The layer's user mask, if any.
-	VectorMask* vectorMask;				///< The layer's vector mask, if any.
+	std::unique_ptr<LayerMask> layerMask;	///< The layer's user mask, if any.
+	VectorMask* vectorMask;					///< The layer's vector mask, if any.
 
-	uint32_t blendModeKey;				///< The key denoting the layer's blend mode. Can be any key described in \ref blendMode::Enum.
-	uint8_t opacity;					///< The layer's opacity value, with the range [0, 255] mapped to [0%, 100%].
-	uint8_t clipping;					///< The layer's clipping mode (not used yet).
+	uint32_t blendModeKey;					///< The key denoting the layer's blend mode. Can be any key described in \ref blendMode::Enum.
+	uint8_t opacity;						///< The layer's opacity value, with the range [0, 255] mapped to [0%, 100%].
+	uint8_t clipping;						///< The layer's clipping mode (not used yet).
 
-	uint32_t type;						///< The layer's type. Can be any of \ref layerType::Enum.
-	bool isVisible;						///< The layer's visibility.
-	bool isPassThrough;					///< If the layer is a pass-through group.
+	uint32_t type;							///< The layer's type. Can be any of \ref layerType::Enum.
+	bool isVisible;							///< The layer's visibility.
+	bool isPassThrough;						///< If the layer is a pass-through group.
 
-    bool isCompositeLocked;             ///< If the layer has a composite locked (false by default).
-    bool isTransparencyLocked;          ///< If the layer has a transparency locked (false by default).
-    bool isPositionLocked;              ///< If the layer has a position locked (false by default).
+    bool isCompositeLocked;             	///< If the layer has a composite locked (false by default).
+    bool isTransparencyLocked;          	///< If the layer has a transparency locked (false by default).
+    bool isPositionLocked;              	///< If the layer has a position locked (false by default).
 
-	uint16_t sheetColorKey;				///< The layer's sheet color key. It is shown in layer browser.
+	uint16_t sheetColorKey;					///< The layer's sheet color key. It is shown in layer browser.
 
-	bool isGradientFill;				///< If the layer type is GradientFill
+	bool isGradientFill;					///< If the layer type is GradientFill
 };
 
 PSD_NAMESPACE_END

@@ -133,6 +133,9 @@ PSD_NAMESPACE_BEGIN
 			case exportChannel::ALPHA:
 				return 3u;
 
+			case exportChannel::LAYER_OR_VECTOR_MASK:
+				return 4u;
+
 			default:
 				return 0u;
 		}
@@ -157,6 +160,9 @@ PSD_NAMESPACE_BEGIN
 			case 3u:
 				return channelType::TRANSPARENCY_MASK;
 
+			case 4u:
+				return channelType::LAYER_OR_VECTOR_MASK;
+
 			default:
 				return 0u;
 		}
@@ -167,6 +173,7 @@ PSD_NAMESPACE_BEGIN
 	// ---------------------------------------------------------------------------------------------------------------------
 	static uint32_t GetExtraDataLength(ExportLayer* layer)
 	{
+		const uint8_t layerMaskLength = layer->layerMask ? 20u : 0u;
 		const uint8_t nameLength = static_cast<uint8_t>(strlen(layer->name));
         // 4 signature, 4 key, 4 length, 4 locks themselves
         const uint8_t locksLength = 16u;
@@ -175,7 +182,7 @@ PSD_NAMESPACE_BEGIN
         const uint32_t paddedNameLength = bitUtil::RoundUpToMultiple(nameLength + 1u, 4u);
 
 		// includes the lengths of the layer mask data and layer blending ranges data
-		return (4u + 4u + paddedNameLength + locksLength + layerTypeLength);
+		return (4u + 4u + layerMaskLength + paddedNameLength + locksLength + layerTypeLength);
 	}
 
 
@@ -412,6 +419,11 @@ void DestroyExportDocument(ExportDocument*& document, Allocator* allocator)
 	{
 		DestroyString(allocator, document->layers[i]->name);
 
+		if (document->layers[i]->layerMask)
+		{
+			allocator->Free(document->layers[i]->layerMask->data);
+		}
+
 		for (unsigned int j = 0u; j < ExportLayer::MAX_CHANNEL_COUNT; ++j)
 		{
 			const uint16_t compression = document->layers[i]->channelCompression[j];
@@ -521,7 +533,7 @@ void SetJpegThumbnail(ExportDocument* document, Allocator* allocator, uint32_t w
 
 // ---------------------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------------------
-unsigned int AddLayer(ExportDocument* document, /*Allocator* allocator, */const char* name)
+unsigned int AddLayer(ExportDocument* document, const char* name)
 {
 	const unsigned int index = document->layerCount;
 	++document->layerCount;
@@ -536,6 +548,7 @@ unsigned int AddLayer(ExportDocument* document, /*Allocator* allocator, */const 
 	layer.isPositionLocked = false;
 
 	layer.type = 0u;
+	layer.layerMask = nullptr;
 	layer.blendMode = blendMode::NORMAL;
 	layer.opacity = 255u;
 	layer.isVisible = true;
@@ -737,7 +750,7 @@ void UpdateLayerImpl(ExportDocument* document, Allocator* allocator, unsigned in
 	}
 	else if (document->colorMode == exportColorMode::RGB)
 	{
-		PSD_ASSERT((channel == exportChannel::RED) || (channel == exportChannel::GREEN) || (channel == exportChannel::BLUE) || (channel == exportChannel::ALPHA), "Wrong channel for this color mode.");
+		PSD_ASSERT((channel == exportChannel::RED) || (channel == exportChannel::GREEN) || (channel == exportChannel::BLUE) || (channel == exportChannel::ALPHA) || (channel == exportChannel::LAYER_OR_VECTOR_MASK), "Wrong channel for this color mode.");
 	}
 
 	ExportLayer* layer = document->layers[layerIndex].get();
@@ -815,6 +828,21 @@ void UpdateLayerType(ExportDocument* document, unsigned int layerIndex, uint32_t
 {
 	ExportLayer& layer = *document->layers[layerIndex];
 	layer.type = layerType;
+}
+
+
+// ---------------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
+void UpdateLayerMask(ExportDocument* document, unsigned int layerIndex, int top, int left, int bottom, int right, uint8_t defaultColor)
+{
+	ExportLayer& layer = *document->layers[layerIndex];
+	layer.layerMask = std::make_unique<LayerMask>();
+	layer.layerMask->top = top;
+	layer.layerMask->left = left;
+	layer.layerMask->bottom = bottom;
+	layer.layerMask->right = right;
+	layer.layerMask->defaultColor = defaultColor;
+	PSD_ASSERT(defaultColor == 0u || defaultColor == 255u);
 }
 
 
@@ -1410,8 +1438,31 @@ void WriteDocument(ExportDocument* document, Allocator* allocator, File* file)
         const uint32_t extraDataLength = GetExtraDataLength(layer);
         fileUtil::WriteToFileBE(writer, extraDataLength);
 
-        const uint32_t layerMaskDataLength = 0u;
-		fileUtil::WriteToFileBE(writer, layerMaskDataLength);
+		// Layer mask
+		if (layer->layerMask)
+		{
+			const uint32_t layerMaskDataLength = 20u;
+			fileUtil::WriteToFileBE(writer, layerMaskDataLength);
+			// 16 bytes
+			fileUtil::WriteToFileBE(writer, layer->layerMask->top);
+			fileUtil::WriteToFileBE(writer, layer->layerMask->left);
+			fileUtil::WriteToFileBE(writer, layer->layerMask->bottom);
+			fileUtil::WriteToFileBE(writer, layer->layerMask->right);
+			// 1 byte
+			fileUtil::WriteToFileBE(writer, layer->layerMask->defaultColor);
+			// 1 byte
+			uint8_t maskFlags = 0u;
+			fileUtil::WriteToFileBE(writer, flags);
+			// 2 byte
+			uint16_t padding = 0u;
+			fileUtil::WriteToFileBE(writer, padding);
+		}
+		else
+		{
+			const uint32_t layerMaskDataLength = 0u;
+			fileUtil::WriteToFileBE(writer, layerMaskDataLength);
+		}
+
 
         const uint32_t layerBlendingRangesDataLength = 0u;
 		fileUtil::WriteToFileBE(writer, layerBlendingRangesDataLength);
@@ -1421,7 +1472,6 @@ void WriteDocument(ExportDocument* document, Allocator* allocator, File* file)
         const uint32_t paddedNameLength = bitUtil::RoundUpToMultiple(nameLength + 1u, 4u);
 		fileUtil::WriteToFileBE(writer, nameLength);
         writer.Write(layer->name, paddedNameLength - 1u);
-
 
 
 		// lock information
