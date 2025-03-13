@@ -28,6 +28,7 @@
 #include <cstring>
 
 #include <iostream>
+#include <vector>
 
 #include "PsdSheetColor.h"
 PSD_NAMESPACE_BEGIN
@@ -534,7 +535,10 @@ PSD_NAMESPACE_BEGIN
                 layer->isCompositeLocked = false;
                 layer->isPositionLocked = false;
 				layer->sheetColorKey = 0u;
-				layer->isGradientFill = false;
+				layer->hasGradientFill = false;
+				layer->hasBrightnessContrast = false;
+				layer->brightness = 0u;
+				layer->contrast = 0u;
 
 				layer->top = fileUtil::ReadFromFileBE<int32_t>(reader);
 				layer->left = fileUtil::ReadFromFileBE<int32_t>(reader);
@@ -763,6 +767,7 @@ PSD_NAMESPACE_BEGIN
                         layer->isCompositeLocked = compositeLocked;
                         layer->isPositionLocked = positionLocked;
                     }
+                    // sheet color
 					else if (key == util::Key<'l', 'c', 'l', 'r'>::VALUE)
 					{
 						uint16_t color1 = fileUtil::ReadFromFileBE<uint16_t>(reader);
@@ -772,9 +777,88 @@ PSD_NAMESPACE_BEGIN
 
 						layer->sheetColorKey = color1;
 					}
+					// Brightness and Contrast adjustment layer // Deprecated
+					else if (key == util::Key<'b', 'r', 'i', 't'>::VALUE)
+					{
+						reader.Skip(length);
+					}
+					// Content Generator Extra Data
+					else if (key == util::Key<'C', 'g', 'E', 'd'>::VALUE)
+					{
+						uint32_t read = 0u;
+						uint32_t CgEdVersion = fileUtil::ReadFromFileBE<uint32_t>(reader);
+						uint32_t descriptorCounts = fileUtil::ReadFromFileBE<uint32_t>(reader);
+						uint32_t unknown1 = fileUtil::ReadFromFileBE<uint32_t>(reader);
+						uint16_t unknown2 = fileUtil::ReadFromFileBE<uint16_t>(reader);
+
+						uint32_t nullKey = fileUtil::ReadFromFileBE<uint32_t>(reader);
+						read += 18;
+						if (nullKey == util::Key<'n', 'u', 'l', 'l'>::VALUE)
+						{
+							uint32_t itemsNum = fileUtil::ReadFromFileBE<uint32_t>(reader);
+							read += 4;
+							for (uint32_t c = 0u; c < itemsNum; ++c)
+							{
+								uint32_t keyLength = fileUtil::ReadFromFileBE<uint32_t>(reader);
+								read += 4;
+								if (keyLength == 0)
+								{
+									uint32_t keyName = fileUtil::ReadFromFileBE<uint32_t>(reader);
+									uint32_t keyType = fileUtil::ReadFromFileBE<uint32_t>(reader);
+									read += 8;
+									if (keyType == util::Key<'l', 'o', 'n', 'g'>::VALUE)
+									{
+										if (keyName == util::Key<'B', 'r', 'g', 'h'>::VALUE)
+										{
+											uint32_t brightness = fileUtil::ReadFromFileBE<uint32_t>(reader);
+											layer->brightness = brightness;
+										}
+										else if (keyName == util::Key<'C', 'n', 't', 'r'>::VALUE )
+										{
+											uint32_t contrast = fileUtil::ReadFromFileBE<uint32_t>(reader);
+											layer->contrast = contrast;
+										}
+										else
+										{
+											reader.Skip(4u);
+										}
+										read += 4u;
+									}
+									else if (keyType == util::Key<'b', 'o', 'o', 'l'>::VALUE)
+									{
+										reader.Skip(1u);
+										read += 1u;
+									}
+								}
+								else
+								{
+									reader.Skip(keyLength);
+									uint32_t keyType = fileUtil::ReadFromFileBE<uint32_t>(reader);
+									read += keyLength + 4;
+									if (keyType == util::Key<'l', 'o', 'n', 'g'>::VALUE)
+									{
+										reader.Skip(4u);
+										read += 4u;
+									}
+									else if (keyType == util::Key<'b', 'o', 'o', 'l'>::VALUE)
+									{
+										reader.Skip(1u);
+										read += 1u;
+									}
+								}
+							}
+						}
+						reader.Skip(length - read);
+					}
+					// Levels
+					else if (key == util::Key<'l', 'e', 'v', 'l'>::VALUE)
+					{
+						reader.Skip(length);
+					}
+					// Gradient Fill adjustment layer
 					else if (key == util::Key<'G', 'd', 'F', 'l'>::VALUE)
 					{
-						layer->isGradientFill = true;
+						layer->hasGradientFill = true;
 						reader.Skip(length);
 					}
 					else

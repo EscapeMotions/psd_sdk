@@ -49,7 +49,10 @@ struct Layer
 
 	uint16_t sheetColorKey;					///< The layer's sheet color key. It is shown in layer browser.
 
-	bool isGradientFill;					///< If the layer type is GradientFill
+	bool hasGradientFill;					///< If the layer has adjustment layer GradientFill
+	bool hasBrightnessContrast;				///< If the layer has adjustment layer Brightness/Contrast
+	uint32_t brightness;					///< The layer's brightness from adjustment layer.
+	uint32_t contrast;						///< The layer's contrast from adjustment layer.
 };
 
 PSD_NAMESPACE_END
