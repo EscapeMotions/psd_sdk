@@ -177,12 +177,14 @@ PSD_NAMESPACE_BEGIN
 		const uint8_t nameLength = static_cast<uint8_t>(strlen(layer->name));
         // 4 signature, 4 key, 4 length, 4 locks themselves
         const uint8_t locksLength = 16u;
+		// 4 signature, 4key, 4 length, 2 color1, 2 color2, 2 color3, 2 color4
+		const uint8_t sheetColorLength = 20u;
 		// 4 signature, 4 key, 4 length, 4 type itself, 4 signature, 4 group blend mode
 		const uint8_t layerTypeLength = 24u;
         const uint32_t paddedNameLength = bitUtil::RoundUpToMultiple(nameLength + 1u, 4u);
 
 		// includes the lengths of the layer mask data and layer blending ranges data
-		return (4u + 4u + layerMaskLength + paddedNameLength + locksLength + layerTypeLength);
+		return (4u + 4u + layerMaskLength + paddedNameLength + locksLength + sheetColorLength + layerTypeLength);
 	}
 
 
@@ -548,6 +550,7 @@ unsigned int AddLayer(ExportDocument* document, const char* name)
 	layer.isPositionLocked = false;
 
 	layer.type = 0u;
+	layer.sheetColor = 0u;
 	layer.layerMask = nullptr;
 	layer.blendMode = blendMode::NORMAL;
 	layer.opacity = 255u;
@@ -820,6 +823,16 @@ void UpdateLayerLocks(ExportDocument* document, unsigned int layerIndex, bool is
 	layer.isTransparencyLocked = isTransparencyLocked;
 	layer.isCompositeLocked = isCompositeLocked;
 	layer.isPositionLocked = isPositionLocked;
+}
+
+
+// ---------------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
+void UpdateLayerSheetColor(ExportDocument* document, unsigned int layerIndex, uint16_t c1, uint16_t c2, uint16_t c3, uint16_t c4)
+{
+	ExportLayer& layer = *document->layers[layerIndex];
+
+	layer.sheetColor = c1;
 }
 
 
@@ -1495,6 +1508,22 @@ void WriteDocument(ExportDocument* document, Allocator* allocator, File* file)
 		lockValue |= layer->isCompositeLocked ? (0x01 << 1) : 0;
 		lockValue |= layer->isPositionLocked ? (0x01 << 2) : 0;
 		fileUtil::WriteToFileBE(writer, lockValue);
+
+		// sheet color
+		fileUtil::WriteToFileBE(writer, util::Key<'8', 'B', 'I', 'M'>::VALUE);
+		fileUtil::WriteToFileBE(writer, util::Key<'l', 'c', 'l', 'r'>::VALUE);
+		const uint32_t sheetColorLength = 8u;
+		fileUtil::WriteToFileBE(writer, sheetColorLength);
+
+		uint16_t color1 = layer->sheetColor;
+		uint16_t color2 = 0u;
+		uint16_t color3 = 0u;
+		uint16_t color4 = 0u;
+
+		fileUtil::WriteToFileBE(writer, color1);
+		fileUtil::WriteToFileBE(writer, color2);    // Just placeholder
+		fileUtil::WriteToFileBE(writer, color3);    // Just placeholder
+		fileUtil::WriteToFileBE(writer, color4);    // Just placeholder
 
 		// section divider setting
 		fileUtil::WriteToFileBE(writer, util::Key<'8', 'B', 'I', 'M'>::VALUE);

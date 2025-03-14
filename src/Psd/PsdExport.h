@@ -65,6 +65,10 @@ unsigned int AddLayer(ExportDocument* document, const char* name);
 void UpdateLayerLocks(ExportDocument* document, unsigned int layerIndex, bool isTransparencyLocked, bool isCompositeLocked, bool isPositionLocked);
 
 /// \ingroup Exporter
+/// Updates a sheet color of layer.
+void UpdateLayerSheetColor(ExportDocument* document, unsigned int layerIndex, uint16_t c1, uint16_t c2 = 0u, uint16_t c3 = 0u, uint16_t c4 = 0u);
+
+/// \ingroup Exporter
 /// Updates a type of given layer.
 /// Default layer type is zero (Any other type of layer).
 void UpdateLayerType(ExportDocument* document, unsigned int layerIndex, uint32_t layerType);

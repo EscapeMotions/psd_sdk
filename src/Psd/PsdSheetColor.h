@@ -17,11 +17,13 @@ namespace sheetColor
         ORANGE,
         YELLOW,
         GREEN,
+        SEAFOAM,
         BLUE,
+        INDIGO,
+        MAGENTA,
+        FUCHSIA,
         VIOLET,
-        GRAY,
-
-        UNKNOWN
+        GRAY
     };
 
     /// Converts a given \a key to the corresponding \ref sheetColor::Enum.

@@ -20,11 +20,13 @@ namespace sheetColor
             case 2: return ORANGE;
             case 3: return YELLOW;
             case 4: return GREEN;
-            case 5: return BLUE;
-            case 6: return VIOLET;
-            case 7: return GRAY;
-
-            default: return UNKNOWN;
+            case 5: return SEAFOAM;
+            case 6: return BLUE;
+            case 7: return INDIGO;
+            case 8: return MAGENTA;
+            case 9: return FUCHSIA;
+            case 10: return VIOLET;
+            case 11: return GRAY;
         }
     }
 }

@@ -37,6 +37,8 @@ struct ExportLayer
     bool isPositionLocked;
 
 	uint32_t type;
+
+	uint16_t sheetColor;
 };
 
 PSD_NAMESPACE_END
