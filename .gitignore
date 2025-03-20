@@ -438,3 +438,5 @@ src/Psd/CMakeCache.txt
 src/Psd/CmakeFiles
 src/Psd/build.ninja
 src/Psd/cmake_install.cmake
+cmake_build/
+include/
