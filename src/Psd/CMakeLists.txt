@@ -9,8 +9,13 @@ project(Psd)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-MESSAGE("-- CMAKE_HOST_SYSTEM_NAME ${CMAKE_HOST_SYSTEM_NAME}")
-MESSAGE("-- CMAKE_HOST_SYSTEM_VERSION ${CMAKE_HOST_SYSTEM_VERSION}")
+MESSAGE("-- PSD=>CMAKE_HOST_SYSTEM_NAME ${CMAKE_HOST_SYSTEM_NAME}")
+MESSAGE("-- PSD=>CMAKE_HOST_SYSTEM_VERSION ${CMAKE_HOST_SYSTEM_VERSION}")
+if(manual)
+    MESSAGE("-- PSD=>Manual mode")
+else()
+    MESSAGE("-- PSD=>Automatic mode")
+endif()
 
 set(psd_source_exporter
   PsdExport.h
@@ -44,19 +49,19 @@ if (WIN32)
     PsdNativeFile.h
     PsdNativeFile.cpp
   )
-  message("-- PROJECT_PLATFORM=WINDOWS")
+  message("-- PSD=>PROJECT_PLATFORM=WINDOWS")
 elseif (APPLE)
   list(APPEND psd_source_interfaces
     PsdNativeFile_Mac.h
     PsdNativeFile_Mac.mm
   )
-  message("-- PROJECT_PLATFORM=APPLE")
+  message("-- PSD=>PROJECT_PLATFORM=APPLE")
 else()
   list(APPEND psd_source_interfaces
     PsdNativeFile_Linux.h
     PsdNativeFile_Linux.cpp
   )
-  message("-- PROJECT_PLATFORM=LINUX")
+  message("-- PSD=>PROJECT_PLATFORM=LINUX")
 endif()
 
 
@@ -165,24 +170,14 @@ set(psd_source
 
 set(STATIC_BUILD FALSE)
 
-if (${STATIC_BUILD})
-    add_library(Psd STATIC ${psd_source})
-    set_target_properties(Psd PROPERTIES PUBLIC_HEADER "include/Psd.h")
-    target_include_directories(Psd PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-    include(GNUInstallDirs)
-    install(TARGETS Psd 
-            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-else()
-    # SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-
+if (manual)
+    if (${STATIC_BUILD})
+        add_library(Psd STATIC ${psd_source})
+    else()
+        add_library(Psd SHARED ${psd_source})
+    endif()
+else ()
     add_library(Psd SHARED ${psd_source})
-    set_target_properties(Psd PROPERTIES PUBLIC_HEADER "include/Psd.h")
-    target_include_directories(Psd PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-    include(GNUInstallDirs)
-    install(TARGETS Psd 
-            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 endif()
 
 source_group("Source Files/Exporter" FILES ${psd_source_exporter})
@@ -196,13 +191,23 @@ source_group("Source Files/Util" FILES ${psd_source_util})
 source_group("Source Files/Zip" FILES ${psd_source_zip})
 source_group("Source Files" FILES ${psd_source_})
 
-file(REMOVE ./include)
-file(MAKE_DIRECTORY ./include)
+if(manual)
+    file(REMOVE ./include)
+    file(MAKE_DIRECTORY ./include)
 
-file(GLOB HEADER_FILES "*.h")
+    file(GLOB HEADER_FILES "*.h")
 
-foreach (header ${HEADER_FILES})
-    file(COPY ${header} DESTINATION ${CMAKE_SOURCE_DIR}/include)
-endforeach ()
+    foreach (header ${HEADER_FILES})
+        file(COPY ${header} DESTINATION ${CMAKE_SOURCE_DIR}/include)
+    endforeach ()
+else()
+    file(REMOVE ${LIBPATH_SUB}/psd/include)
+    file(MAKE_DIRECTORY ${LIBPATH_SUB}/psd/include)
 
+    file(GLOB HEADER_FILES "*.h")
+
+    foreach (header ${HEADER_FILES})
+        file(COPY ${header} DESTINATION ${LIBPATH_SUB}/psd/include)
+    endforeach ()
+endif ()
 
