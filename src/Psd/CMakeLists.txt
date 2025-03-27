@@ -192,13 +192,14 @@ source_group("Source Files/Zip" FILES ${psd_source_zip})
 source_group("Source Files" FILES ${psd_source_})
 
 if(manual)
-    file(REMOVE ./include)
-    file(MAKE_DIRECTORY ./include)
+    file(REMOVE ${CMAKE_SOURCE_DIR}/../../include)
+    message("${CMAKE_SOURCE_DIR}/../../include")
+    file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/../../include)
 
-    file(GLOB HEADER_FILES "*.h")
+    file(GLOB HEADER_FILES "${CMAKE_SOURCE_DIR}/*.h")
 
     foreach (header ${HEADER_FILES})
-        file(COPY ${header} DESTINATION ${CMAKE_SOURCE_DIR}/include)
+        file(COPY ${header} DESTINATION ${CMAKE_SOURCE_DIR}/../../include)
     endforeach ()
 else()
     file(REMOVE ${LIBPATH_SUB}/psd/include)

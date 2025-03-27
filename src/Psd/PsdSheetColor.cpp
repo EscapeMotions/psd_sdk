@@ -27,6 +27,8 @@ namespace sheetColor
             case 9: return FUCHSIA;
             case 10: return VIOLET;
             case 11: return GRAY;
+
+            default: return NONE;
         }
     }
 }
