@@ -193,7 +193,6 @@ source_group("Source Files" FILES ${psd_source_})
 
 if(manual)
     file(REMOVE ${CMAKE_SOURCE_DIR}/../../include)
-    message("${CMAKE_SOURCE_DIR}/../../include")
     file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/../../include)
 
     file(GLOB HEADER_FILES "${CMAKE_SOURCE_DIR}/*.h")
