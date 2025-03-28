@@ -160,7 +160,9 @@
 
 // MM: disable all warnings for this file, it is not under our control
 #if PSD_USE_GCC
-	#pragma GCC diagnostic warning "-w"
+	// #pragma GCC diagnostic warning "-w"
+	#pragma GCC diagnostic ignored "-Wall"
+	#pragma GCC diagnostic ignored "-Wextra"
 #else
 	#pragma warning(push, 0)
 	#pragma warning(disable : 4711)		// function 'function' selected for automatic inline expansion

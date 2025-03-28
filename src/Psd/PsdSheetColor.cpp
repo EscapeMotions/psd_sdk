@@ -30,6 +30,7 @@ namespace sheetColor
 
             default: return NONE;
         }
+        return NONE;
     }
 }
 

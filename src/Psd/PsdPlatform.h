@@ -40,6 +40,9 @@
 #define NOMB
 #define NOMEMMGR
 #define NOMETAFILE
+#ifdef NOMINMAX
+#	undef NOMINMAX // to silence compiler warnings
+#endif
 #define NOMINMAX
 #define NOMSG
 #define NOOPENFILE
