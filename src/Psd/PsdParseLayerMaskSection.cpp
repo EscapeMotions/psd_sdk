@@ -681,14 +681,12 @@ PSD_NAMESPACE_BEGIN
 
 				// skip blending ranges data, we are not interested in that for now
 				const uint32_t layerBlendingRangesDataLength = fileUtil::ReadFromFileBE<uint32_t>(reader);
-                // std::cout << "layerBlendingRangesDataLength" << layerBlendingRangesDataLength << std::endl;
                 reader.Skip(layerBlendingRangesDataLength);
 
 				// the layer name is stored as pascal string, padded to a multiple of 4
 				char layerName[512] = {};
 				const uint8_t nameLength = fileUtil::ReadFromFileBE<uint8_t>(reader);
 				const uint32_t paddedNameLength = bitUtil::RoundUpToMultiple(nameLength + 1u, 4u);
-                // std::cout << "paddedNameLength" << paddedNameLength << std::endl;
 				reader.Read(layerName, paddedNameLength - 1u);
 
 				layer->name.Assign(layerName);
@@ -698,7 +696,6 @@ PSD_NAMESPACE_BEGIN
 				// the PSD format sometimes includes the 4-byte length in its section size, and sometimes not.
 				const uint32_t additionalLayerInfoSize = extraDataLength - layerMaskDataLength - layerBlendingRangesDataLength - paddedNameLength - 8u;
 				int64_t toRead = additionalLayerInfoSize;
-                // std::cout << "To read: " << toRead << std::endl;
 				while (toRead > 0)
 				{
 					const uint32_t signature = fileUtil::ReadFromFileBE<uint32_t>(reader);

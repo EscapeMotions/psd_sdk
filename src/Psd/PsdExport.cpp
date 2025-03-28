@@ -175,6 +175,10 @@ PSD_NAMESPACE_BEGIN
 	{
 		const uint8_t layerMaskLength = layer->layerMask ? 20u : 0u;
 		const uint8_t nameLength = static_cast<uint8_t>(strlen(layer->name));
+		// 4 signature, 4 key, 4 length, 4 number of characters, var name
+		const uint32_t utf16DataLength = 4 + (layer->utf16NameLength) * sizeof(uint16_t);
+		const uint32_t paddedUtf16DataLength = bitUtil::RoundUpToMultiple(utf16DataLength, 4u);
+		const uint8_t utf16NameLength = layer->utf16NameLength != 0 ? 12 + paddedUtf16DataLength : 0u;
         // 4 signature, 4 key, 4 length, 4 locks themselves
         const uint8_t locksLength = 16u;
 		// 4 signature, 4key, 4 length, 2 color1, 2 color2, 2 color3, 2 color4
@@ -184,7 +188,7 @@ PSD_NAMESPACE_BEGIN
         const uint32_t paddedNameLength = bitUtil::RoundUpToMultiple(nameLength + 1u, 4u);
 
 		// includes the lengths of the layer mask data and layer blending ranges data
-		return (4u + 4u + layerMaskLength + paddedNameLength + locksLength + sheetColorLength + layerTypeLength);
+		return (4u + 4u + layerMaskLength + paddedNameLength + utf16NameLength + locksLength + sheetColorLength + layerTypeLength);
 	}
 
 
@@ -545,6 +549,8 @@ unsigned int AddLayer(ExportDocument* document, const char* name)
 	ExportLayer& layer = *document->layers.back();
 
 	layer.name = CreateString(name);
+	layer.utf16NameLength = 0u;
+	layer.utf16Name = nullptr;
 	layer.isTransparencyLocked = false;
 	layer.isCompositeLocked = false;
 	layer.isPositionLocked = false;
@@ -559,8 +565,6 @@ unsigned int AddLayer(ExportDocument* document, const char* name)
 
 	return index;
 }
-
-
 // ---------------------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------------------
 template <typename T>
@@ -814,6 +818,16 @@ void UpdateLayerImpl(ExportDocument* document, Allocator* allocator, unsigned in
 	}
 }
 
+// ---------------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
+void UpdateLayerUtfName(ExportDocument* document, unsigned int layerIndex, uint16_t* utf16Name, uint32_t length)
+{
+	ExportLayer& layer = *document->layers[layerIndex];
+
+	layer.utf16NameLength = length;
+	layer.utf16Name = std::make_unique<uint16_t[]>(length);
+	std::copy_n(utf16Name, length, layer.utf16Name.get());
+}
 
 // ---------------------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------------------
@@ -1495,6 +1509,33 @@ void WriteDocument(ExportDocument* document, Allocator* allocator, File* file)
 		fileUtil::WriteToFileBE(writer, nameLength);
         writer.Write(layer->name, paddedNameLength - 1u);
 
+		if (layer->utf16NameLength > 0)
+		{
+			// unicode name
+			fileUtil::WriteToFileBE(writer, util::Key<'8', 'B', 'I', 'M'>::VALUE);
+			fileUtil::WriteToFileBE(writer, util::Key<'l', 'u', 'n', 'i'>::VALUE);
+			// +1 for null terminator symbol
+			const uint32_t utf16DataLength = 4 + (layer->utf16NameLength) * sizeof(uint16_t);
+			const uint32_t paddedUtf16DataLength = bitUtil::RoundUpToMultiple(utf16DataLength, 4u);
+
+			fileUtil::WriteToFileBE(writer, paddedUtf16DataLength);
+
+			// PSD Unicode strings store 4 bytes for the number of characters, NOT bytes, followed by
+			// 2-byte UTF16 Unicode data without the terminating null.
+			fileUtil::WriteToFileBE(writer, layer->utf16NameLength);
+
+			for (uint32_t c = 0u; c < layer->utf16NameLength; ++c)
+			{
+				const uint16_t utf16Char = layer->utf16Name[c];
+				fileUtil::WriteToFileBE(writer, utf16Char);
+			}
+
+			if (utf16DataLength != paddedUtf16DataLength)
+			{
+				constexpr uint16_t padding = 0u;
+				fileUtil::WriteToFileBE(writer, padding);
+			}
+		}
 
 		// lock information
 		fileUtil::WriteToFileBE(writer, util::Key<'8', 'B', 'I', 'M'>::VALUE);

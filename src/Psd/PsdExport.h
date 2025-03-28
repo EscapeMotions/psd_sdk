@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <string>
+
 #include "PsdAllocator.h"
 #include "PsdExportColorMode.h"
 #include "PsdExportChannel.h"
@@ -54,11 +56,13 @@ void SetEXIFData(ExportDocument* document, Allocator* allocator, void* rawExifDa
 /// Sets the JPEG thumbnail of a document. The contents of \a rawJpegData are copied.
 void SetJpegThumbnail(ExportDocument* document, Allocator* allocator, uint32_t width, uint32_t height, void* rawJpegData, uint32_t size);
 
-
 /// \ingroup Exporter
 /// Adds a layer to a document. The returned index can be used to update layer data by a call to \ref UpdateLayer.
-// unsigned int AddLayer(ExportDocument* document, Allocator* allocator, const char* name);
 unsigned int AddLayer(ExportDocument* document, const char* name);
+
+/// \ingroup Exporter
+/// Updates a utf-16 name of layer to inserted values.
+void UpdateLayerUtfName(ExportDocument* document, unsigned int layerIndex, uint16_t* utf16Name, uint32_t length);
 
 /// \ingroup Exporter
 /// Updates a locks of layer to inserted values.

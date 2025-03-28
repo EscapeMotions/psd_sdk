@@ -20,7 +20,8 @@ struct ExportLayer
 	int32_t bottom;
 	int32_t right;
 	char* name;
-
+	uint32_t utf16NameLength;
+	std::unique_ptr<uint16_t[]> utf16Name;
 	std::unique_ptr<LayerMask> layerMask;
 
 	blendMode::Enum blendMode;
