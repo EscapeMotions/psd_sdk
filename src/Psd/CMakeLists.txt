@@ -44,25 +44,30 @@ set(psd_source_interfaces
   PsdMallocAllocator.h
   PsdMallocAllocator.cpp
 )
-if (WIN32)
-  list(APPEND psd_source_interfaces
-    PsdNativeFile.h
-    PsdNativeFile.cpp
-  )
-  message("-- PSD=>PROJECT_PLATFORM=WINDOWS")
-elseif (APPLE)
-  list(APPEND psd_source_interfaces
-    PsdNativeFile_Mac.h
-    PsdNativeFile_Mac.mm
-  )
-  message("-- PSD=>PROJECT_PLATFORM=APPLE")
-else()
-  list(APPEND psd_source_interfaces
-    PsdNativeFile_Linux.h
-    PsdNativeFile_Linux.cpp
-  )
-  message("-- PSD=>PROJECT_PLATFORM=LINUX")
-endif()
+# if (WIN32)
+#   list(APPEND psd_source_interfaces
+#     PsdNativeFile.h
+#     PsdNativeFile.cpp
+#   )
+#   message("-- PSD=>PROJECT_PLATFORM=WINDOWS")
+# elseif (APPLE)
+#   list(APPEND psd_source_interfaces
+#     PsdNativeFile_General.h
+#     PsdNativeFile_General.cpp
+#   )
+#   message("-- PSD=>PROJECT_PLATFORM=APPLE")
+# else()
+#   list(APPEND psd_source_interfaces
+#     PsdNativeFile_Linux.h
+#     PsdNativeFile_Linux.cpp
+#   )
+#   message("-- PSD=>PROJECT_PLATFORM=LINUX")
+# endif()
+
+list(APPEND psd_source_interfaces
+  PsdNativeFile_General.h
+  PsdNativeFile_General.cpp
+)
 
 
 set(psd_source_parser
