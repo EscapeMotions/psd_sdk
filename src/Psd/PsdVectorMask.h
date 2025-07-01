@@ -24,6 +24,8 @@ struct VectorMask
 	float64_t feather;				///< The mask's feather value.
 	uint8_t density;				///< The mask's density value.
 	uint8_t defaultColor;			///< The mask's default color regions outside the enclosing rectangle.
+
+	bool isLinked;					///< The flag representing if mask is linked to layer or not.
 };
 
 PSD_NAMESPACE_END

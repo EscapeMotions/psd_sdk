@@ -861,7 +861,7 @@ void UpdateLayerType(ExportDocument* document, unsigned int layerIndex, uint32_t
 
 // ---------------------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------------------
-void UpdateLayerMask(ExportDocument* document, unsigned int layerIndex, int top, int left, int bottom, int right, uint8_t defaultColor)
+void UpdateLayerMask(ExportDocument* document, unsigned int layerIndex, int top, int left, int bottom, int right, uint8_t defaultColor, bool isLinked)
 {
 	ExportLayer& layer = *document->layers[layerIndex];
 	layer.layerMask = std::make_unique<LayerMask>();
@@ -870,6 +870,7 @@ void UpdateLayerMask(ExportDocument* document, unsigned int layerIndex, int top,
 	layer.layerMask->bottom = bottom;
 	layer.layerMask->right = right;
 	layer.layerMask->defaultColor = defaultColor;
+	layer.layerMask->isLinked = isLinked;
 	PSD_ASSERT(defaultColor == 0u || defaultColor == 255u);
 }
 
@@ -1488,7 +1489,8 @@ void WriteDocument(ExportDocument* document, Allocator* allocator, File* file)
 			fileUtil::WriteToFileBE(writer, layer->layerMask->defaultColor);
 			// 1 byte
 			uint8_t maskFlags = 0u;
-			fileUtil::WriteToFileBE(writer, flags);
+			maskFlags |= ((layer->layerMask->isLinked ? 0u : 1u) << 0);
+			fileUtil::WriteToFileBE(writer, maskFlags);
 			// 2 byte
 			uint16_t padding = 0u;
 			fileUtil::WriteToFileBE(writer, padding);

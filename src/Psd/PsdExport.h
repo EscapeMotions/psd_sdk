@@ -79,7 +79,7 @@ void UpdateLayerType(ExportDocument* document, unsigned int layerIndex, uint32_t
 
 /// \ingroup Exporter
 /// Updates a layer mask of given layer.
-void UpdateLayerMask(ExportDocument* document, unsigned int layerIndex, int top, int left, int bottom, int right, uint8_t defaultColor);
+void UpdateLayerMask(ExportDocument* document, unsigned int layerIndex, int top, int left, int bottom, int right, uint8_t defaultColor, bool isLinked);
 
 /// \ingroup Exporter
 /// Updates a blend mode of given layer.

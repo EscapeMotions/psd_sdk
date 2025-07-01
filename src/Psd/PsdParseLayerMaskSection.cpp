@@ -41,6 +41,7 @@ PSD_NAMESPACE_BEGIN
 		int32_t bottom;
 		int32_t right;
 		uint8_t defaultColor;
+		bool isLinked;
 		bool isVectorMask;
 	};
 
@@ -122,6 +123,7 @@ PSD_NAMESPACE_BEGIN
 		layerMask->feather = feather;
 		layerMask->density = density;
 		layerMask->defaultColor = maskData.defaultColor;
+		layerMask->isLinked = maskData.isLinked;
 	}
 
 
@@ -619,6 +621,7 @@ PSD_NAMESPACE_BEGIN
 					const uint8_t maskFlags = fileUtil::ReadFromFileBE<uint8_t>(reader);
 					toRead -= sizeof(uint8_t);
 
+					maskData[0].isLinked = (maskFlags & (1u << 0)) == 0;
 					maskData[0].isVectorMask = (maskFlags & (1u << 3)) != 0;
 					bool maskHasParameters = (maskFlags & (1u << 4)) != 0;
 					if (maskHasParameters && (layerMaskDataLength <= 28))
@@ -641,6 +644,7 @@ PSD_NAMESPACE_BEGIN
 
 						toRead -= ReadMaskRectangle(reader, maskData[1]);
 
+						maskData[1].isLinked = (realFlags& (1u << 0)) == 0;
 						maskData[1].isVectorMask = (realFlags & (1u << 3)) != 0;
 
 						// note the OR here. whether the following section has mask parameter data or not is influenced by
