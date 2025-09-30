@@ -536,6 +536,7 @@ PSD_NAMESPACE_BEGIN
                 layer->isTransparencyLocked = false;
                 layer->isCompositeLocked = false;
                 layer->isPositionLocked = false;
+				layer->isAllLocked = false;
 				layer->sheetColorKey = 0u;
 				layer->hasGradientFill = false;
 				layer->hasBrightnessContrast = false;
@@ -759,14 +760,17 @@ PSD_NAMESPACE_BEGIN
                         // 0 - transparency locked
                         // 1 - composite locked
                         // 2 - position locked
+                    	// 3 - (probably) all locked
                         uint32_t locked = fileUtil::ReadFromFileBE<uint32_t>(reader);
-                        bool transparencyLocked = (locked & (0x01 << 0)) > 0;
-                        bool compositeLocked = (locked & (0x01 << 1)) > 0;
-                        bool positionLocked = (locked & (0x01 << 2)) > 0;
+                        bool transparencyLocked = (locked & (0x01 << 0)) != 0;
+                        bool compositeLocked = (locked & (0x01 << 1)) != 0;
+                        bool positionLocked = (locked & (0x01 << 2)) != 0;
+                    	bool groupLocked = (locked & 0x80000000) != 0;
 
                         layer->isTransparencyLocked = transparencyLocked;
                         layer->isCompositeLocked = compositeLocked;
                         layer->isPositionLocked = positionLocked;
+                    	layer->isAllLocked = groupLocked;
                     }
                     // sheet color
 					else if (key == util::Key<'l', 'c', 'l', 'r'>::VALUE)

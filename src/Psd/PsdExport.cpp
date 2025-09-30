@@ -831,12 +831,14 @@ void UpdateLayerUtfName(ExportDocument* document, unsigned int layerIndex, uint1
 
 // ---------------------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------------------
-void UpdateLayerLocks(ExportDocument* document, unsigned int layerIndex, bool isTransparencyLocked, bool isCompositeLocked, bool isPositionLocked){
+void UpdateLayerLocks(ExportDocument* document, unsigned int layerIndex, bool isTransparencyLocked, bool isCompositeLocked, bool isPositionLocked, bool isAllLocked){
+	PSD_ASSERT(!isAllLocked || (!isTransparencyLocked && !isCompositeLocked && !isPositionLocked));
 	ExportLayer& layer = *document->layers[layerIndex];
 
 	layer.isTransparencyLocked = isTransparencyLocked;
 	layer.isCompositeLocked = isCompositeLocked;
 	layer.isPositionLocked = isPositionLocked;
+	layer.isAllLocked = isAllLocked;
 }
 
 
@@ -1550,6 +1552,7 @@ void WriteDocument(ExportDocument* document, Allocator* allocator, File* file)
 		lockValue |= layer->isTransparencyLocked ? (0x01 << 0) : 0;
 		lockValue |= layer->isCompositeLocked ? (0x01 << 1) : 0;
 		lockValue |= layer->isPositionLocked ? (0x01 << 2) : 0;
+		lockValue |= layer->isAllLocked ? (0x01 << 31) : 0;
 		fileUtil::WriteToFileBE(writer, lockValue);
 
 		// sheet color

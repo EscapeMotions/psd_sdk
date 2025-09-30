@@ -36,6 +36,7 @@ struct ExportLayer
     bool isTransparencyLocked;
     bool isCompositeLocked;
     bool isPositionLocked;
+	bool isAllLocked;
 
 	uint32_t type;
 

@@ -66,7 +66,7 @@ void UpdateLayerUtfName(ExportDocument* document, unsigned int layerIndex, uint1
 
 /// \ingroup Exporter
 /// Updates a locks of layer to inserted values.
-void UpdateLayerLocks(ExportDocument* document, unsigned int layerIndex, bool isTransparencyLocked, bool isCompositeLocked, bool isPositionLocked);
+void UpdateLayerLocks(ExportDocument* document, unsigned int layerIndex, bool isTransparencyLocked, bool isCompositeLocked, bool isPositionLocked, bool isAllLocked = false);
 
 /// \ingroup Exporter
 /// Updates a sheet color of layer.
