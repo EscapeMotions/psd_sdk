@@ -285,7 +285,7 @@ PSD_NAMESPACE_BEGIN
 	// ---------------------------------------------------------------------------------------------------------------------
 	// ---------------------------------------------------------------------------------------------------------------------
 	template <typename T>
-	static void* ReadChannelDataRLE(SyncFileReader& reader, Allocator* allocator, unsigned int width, unsigned int height)
+	static void* ReadChannelDataRLE(SyncFileReader& reader, Allocator* allocator, unsigned int width, unsigned int height, int& errorCode)
 	{
 		// the RLE-compressed data is preceded by a 2-byte data count for each scan line
 		const unsigned int size = width*height;
@@ -305,7 +305,7 @@ PSD_NAMESPACE_BEGIN
 			void* rleData = allocator->Allocate(rleDataSize, 4u);
 			{
 				reader.Read(rleData, rleDataSize);
-				imageUtil::DecompressRle(static_cast<const uint8_t*>(rleData), rleDataSize, static_cast<uint8_t*>(planarData), width*height*sizeof(T));
+				errorCode = imageUtil::DecompressRle(static_cast<const uint8_t*>(rleData), rleDataSize, static_cast<uint8_t*>(planarData), width*height*sizeof(T));
 			}
 			allocator->Free(rleData);
 
@@ -1039,13 +1039,22 @@ LayerMaskSection* ParseLayerMaskSection(const Document* document, File* file, Al
 
 // ---------------------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------------------
-void ExtractLayer(const Document* document, File* file, Allocator* allocator, Layer* layer)
+int ExtractLayer(const Document* document, File* file, Allocator* allocator, Layer* layer)
 {
 	PSD_ASSERT_NOT_NULL(file);
 	PSD_ASSERT_NOT_NULL(allocator);
 	PSD_ASSERT_NOT_NULL(layer);
 
+	/* Error codes:
+	 *		0 = OK
+	 *		1 = Malformed RLE
+	 *		2 = RLE exceeds destination buffer
+	 *		3 = Unsupported compression type
+	 */
+
 	SyncFileReader reader(file);
+
+	int errorCode = 0;
 
 	const unsigned int channelCount = layer->channelCount;
 	for (unsigned int i=0; i < channelCount; ++i)
@@ -1079,15 +1088,15 @@ void ExtractLayer(const Document* document, File* file, Allocator* allocator, La
 		{
 			if (document->bitsPerChannel == 8)
 			{
-				channel->data = ReadChannelDataRLE<uint8_t>(reader, allocator, width, height);
+				channel->data = ReadChannelDataRLE<uint8_t>(reader, allocator, width, height, errorCode);
 			}
 			else if (document->bitsPerChannel == 16)
 			{
-				channel->data = ReadChannelDataRLE<uint16_t>(reader, allocator, width, height);
+				channel->data = ReadChannelDataRLE<uint16_t>(reader, allocator, width, height, errorCode);
 			}
 			else if (document->bitsPerChannel == 32)
 			{
-				channel->data = ReadChannelDataRLE<float32_t>(reader, allocator, width, height);
+				channel->data = ReadChannelDataRLE<float32_t>(reader, allocator, width, height, errorCode);
 			}
 		}
 		else if (compressionType == compressionType::ZIP)
@@ -1133,7 +1142,7 @@ void ExtractLayer(const Document* document, File* file, Allocator* allocator, La
 		else
 		{
 			PSD_ASSERT(false, "Unsupported compression type %d", compressionType);
-			return;
+			return 3;
 		}
 
 		// if the channel doesn't have any data assigned to it, check if it is a mask channel of any kind.
@@ -1192,6 +1201,7 @@ void ExtractLayer(const Document* document, File* file, Allocator* allocator, La
 			// so there's nothing to do.
 		}
 	}
+	return errorCode;
 }
 
 

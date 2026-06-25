@@ -15,19 +15,20 @@ namespace imageUtil
 {
 	// ---------------------------------------------------------------------------------------------------------------------
 	// ---------------------------------------------------------------------------------------------------------------------
-	void DecompressRle(const uint8_t* PSD_RESTRICT src, unsigned int srcSize, uint8_t* PSD_RESTRICT dest, unsigned int size)
+	int DecompressRle(const uint8_t* PSD_RESTRICT src, unsigned int srcSize, uint8_t* PSD_RESTRICT dest, unsigned int size)
 	{
 		PSD_ASSERT_NOT_NULL(src);
 		PSD_ASSERT_NOT_NULL(dest);
 
 		unsigned int bytesRead = 0u;
 		unsigned int offset = 0u;
+		int errorCode = 0;
 		while (offset < size)
 		{
 			if (bytesRead >= srcSize)
 			{
 				PSD_ERROR("DecompressRle", "Malformed RLE data encountered");
-				return;
+				return 1;
 			}
 
 			const uint8_t byte = *src++;
@@ -42,8 +43,13 @@ namespace imageUtil
 			{
 				// next 257-byte bytes are replicated from the next source byte
 				const unsigned int count = static_cast<unsigned int>(257 - byte);
+				const unsigned int safeCount = (offset + count <= size) ? count : (size - offset);
 
-				memset(dest + offset, *src++, count);
+				if (safeCount < count)
+					errorCode = 2;
+					PSD_ERROR("DecompressRle", "Run-length run exceeds destination buffer, clamping.");
+
+				memset(dest + offset, *src++, safeCount);
 				offset += count;
 
 				++bytesRead;
@@ -53,8 +59,13 @@ namespace imageUtil
 			{
 				// copy next byte+1 bytes 1-by-1
 				const unsigned int count = static_cast<unsigned int>(byte + 1);
-				
-				memcpy(dest + offset, src, count);
+				const unsigned int safeCount = (offset + count <= size) ? count : (size - offset);
+
+				if (safeCount < count)
+					errorCode = 2;
+					PSD_ERROR("DecompressRle", "Literal run exceeds destination buffer, clamping.");
+
+				memcpy(dest + offset, src, safeCount);
 
 				src += count;
 				offset += count;
@@ -62,6 +73,7 @@ namespace imageUtil
 				bytesRead += count;
 			}
 		}
+		return errorCode;
 	}
 
 

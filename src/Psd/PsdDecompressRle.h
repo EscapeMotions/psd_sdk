@@ -10,7 +10,8 @@ namespace imageUtil
 {
 	/// \ingroup ImageUtil
 	/// Decompresses a block of RLE encoded data using the PackBits (http://en.wikipedia.org/wiki/PackBits) algorithm.
-	void DecompressRle(const uint8_t* PSD_RESTRICT src, unsigned int srcSize, uint8_t* PSD_RESTRICT dest, unsigned int size);
+	/// \return \b 0 if there was no error, otherwise error code is returned. Error codes are defined in \a PsdParseLayerMaskSection.cpp.
+	int DecompressRle(const uint8_t* PSD_RESTRICT src, unsigned int srcSize, uint8_t* PSD_RESTRICT dest, unsigned int size);
 
 	/// \ingroup ImageUtil
 	/// Compresses a block of data to RLE encoded data using the PackBits (http://en.wikipedia.org/wiki/PackBits) algorithm.
